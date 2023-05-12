@@ -27,6 +27,7 @@ The analysis of the trajectory data is expected to provide valuable insights int
 The data will consist of GPS trajectory data collected from individuals traveling to nearest train stations. The dataset will include information on the mode of transportation used (e.g., walking, biking, e-bike, car, public transit), as well as the distance between the individual's home and the train station and in what time this is made.
 ## Analytical concepts
 <!-- Which analytical concepts will you use? What conceptual movement spaces and respective modelling approaches of trajectories will you be using? What additional spatial analysis methods will you be using? -->
+Statistical methods such as regression models, correlation analysis, and clustering techniques are appropriate for the present work. For the spatial analysis, the calculation of distances in kilometers and meters between residence and stations is used. For this purpose, the spatial clustering and visualization of trajectories is created. Categorization of modes is done by grouping modes into broader categories (e.g. modes with active Co2 emissions, modes with passive Co2 emissions, so that both categories are disjoint) for easier analysis.
 
 ## R concepts
 <!-- Which R concepts, functions, packages will you mainly use. What additional spatial analysis methods will you be using? -->
