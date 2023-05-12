@@ -24,7 +24,7 @@ The purpose of this research is to investigate the relationship between the dist
 The analysis of the trajectory data is expected to provide valuable insights into the relationship between the distance from home to the train station and the mode of transportation used. It is expected that the analysis will reveal patterns and trends in the data, such as temporal or spatial variations in the relationship between distance and mode used. Finally, it is expected that the analysis will highlight potential confounding variables that may influence the relationship between distance and mode used.
 ## Data
 <!-- What data will you use? Will you require additional context data? Where do you get this data from? Do you already have all the data? -->
-
+The data will consist of GPS trajectory data collected from individuals traveling to nearest train stations. The dataset will include information on the mode of transportation used (e.g., walking, biking, e-bike, car, public transit), as well as the distance between the individual's home and the train station and in what time this is made.
 ## Analytical concepts
 <!-- Which analytical concepts will you use? What conceptual movement spaces and respective modelling approaches of trajectories will you be using? What additional spatial analysis methods will you be using? -->
 
