@@ -31,9 +31,13 @@ Statistical methods such as regression models, correlation analysis, and cluster
 
 ## R concepts
 <!-- Which R concepts, functions, packages will you mainly use. What additional spatial analysis methods will you be using? -->
+For data manipulation and cleaning using dplyr and tidyr and for the geospatial analysis sf and sp packages are being used.
+Statistical modeling and hypothesis testing using base R functions and specialized packages (e.g., ggplot2, lme4).
+For the visualization of results ggplot2 and other relevant packages are applied.
 
 ## Risk analysis
 <!-- What could be the biggest challenges/problems you might face? What is your plan B? -->
+Limited sample size or biased sampling could affect the generalizability of results. Furthermore inaccurate GPS data or missing information on transportation modes could impact the analysis. Moreover unaccounted confounding variables (e.g., weather conditions, individual preferences) could influence the relationship between distance and mode used.
 
 ## Questions? 
 <!-- Which questions would you like to discuss at the coaching session? -->
