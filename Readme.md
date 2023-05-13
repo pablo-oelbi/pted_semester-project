@@ -5,8 +5,8 @@ Analysis Geo 880**
 
 | Semester:      | FS23                                     |
 |:---------------|:---------------------------------------- |
-| **Data:**      | What type of data are you focussing on?  |
-| **Title:**     | The title of your project                |
+| **Data:**      | GPS trajectory data from POSMO           |
+| **Working Title:**     | Commuting Mode Choice based on distance to the next train station                |
 | **Student 1:** | Marijana Maric                           |
 | **Student 2:** | Pablo Bischofberger                      |
 
