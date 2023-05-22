@@ -1,7 +1,6 @@
 ---
-title: The title of your Semesterproject
-subtitle: A subtle subtitle
-author: Firstname1 Lastname1 and Firstname2 Lastname2
+title: Commuting Mode Choice based on distance to the next train station
+author: Marijana Maric and Pablo Bischofberger
 output: html
 ---
 
@@ -25,10 +24,9 @@ output: html
 ```
 
 
-## Abstract
+## **Abstract**
 
-<!-- the following is just a placeholder text, remove it!-->
-Society philosophy merciful selfish sexuality depths overcome madness. Morality free faithful merciful ubermensch good oneself convictions intentions eternal-return. Spirit against christianity right selfish evil ultimate pious hatred ocean dead insofar noble. Madness pious madness christianity prejudice horror grandeur god strong. Ideal will philosophy reason pious society burying ascetic right society philosophy. Society will evil intentions against philosophy against holiest victorious.
+This study examines the relationship between the distance from home to the train station and the transportation mode used. The analysis of trajectory data seeks to identify patterns and factors influencing the choice of transportation. Statistical methods, such as regression models and clustering techniques, are employed. The study is constrained by the small sample size, inaccurate GPS data, and unaccounted for confounding variables.
 
 
 ## Introduction
@@ -36,41 +34,56 @@ Society philosophy merciful selfish sexuality depths overcome madness. Morality 
 <!-- the following is just a placeholder text, remove it!-->
 Against holiest pinnacle mountains merciful ideal society play disgust will ubermensch ultimate pinnacle victorious. Snare value law gains battle pious intentions revaluation strong. Insofar snare faith ideal oneself.
 
-```{r}
+## **Data Description**
+
+The data will consist of GPS trajectory data collected from individuals traveling to nearest train stations. The dataset will include information on the mode of transportation used (e.g., walking, biking, e-bike, car, public transit), as well as the distance between the individual's home and the train station and in what time this is made. Each record in the dataset includes the following variables:
+
+-   **`user_id`**: A unique identifier for each individual in the study. (chr)
+
+-   **`datetime`**: The date and time of each recorded location. (dttm)
+
+-   **`weekday`**: The day of the week. (chr)
+
+-   **`place_name`**: The name of the place associated with each recorded location.(chr)
+
+-   **`transport_mode`**: The mode of transportation used by the individual (e.g., walking, biking, car, public transit).(chr)
+
+-   **`lon_x`** and **`lat_y`**: The longitude and latitude of each recorded location.(dbl)
+
+```{r, warning=FALSE, echo=TRUE, message = FALSE}
+# Load required libraries
+library(readr)
+library(sf)
+library(dplyr)
 library(ggplot2)
+library(lubridate)
 
-# Include tables with the function "kable"
-
-knitr::kable(head(mtcars))
-```
-
-<!-- the following is just a placeholder text, remove it!-->
-Revaluation evil aversion ultimate decrepit disgust decrepit eternal-return noble faithful pinnacle. Truth ascetic inexpedient decrepit free. Ubermensch free merciful mountains endless fearful decieve reason mountains will decrepit strong selfish depths. Overcome faith snare gains oneself transvaluation.
-
-```{r}
-# include plots automatically
-
-ggplot(mtcars, aes(cyl, disp)) +
-  geom_point()
+# Load the data
+data <- read_delim("data/posmo.csv")
 
 ```
 
 
+## **Methods**
 
+The following methods will be applied in this study:
 
+1.  **Data Preprocessing:** We will begin by handling missing data and converting the **`datetime`** column to a suitable format. We will also create new variables that might be useful for our analysis, such as the hour and the month derived from the **`datetime`** column. 
 
-## Material and Methods
+2.  **Geospatial Analysis:** We will convert the data to a spatial data frame, which will allow us to perform geospatial analyses, including calculating distances and spatial clustering.
 
-<!-- the following is just a placeholder text, remove it!-->
-Christianity revaluation value battle faithful marvelous society derive free truth. Right battle mountains superiority grandeur ascetic grandeur merciful. Derive against intentions burying salvation ocean. Right intentions dead victorious ideal spirit evil ultimate joy. Holiest spirit value oneself contradict aversion christianity ultimate convictions war christian.
+3.  **Statistical Analysis:** We will apply suitable statistical tests to analyze the relationship between the distance from home to the station and the mode of transportation used.
 
-## Results
+4.  **Time-series Analysis:** Considering the timestamp data, we will explore it as a time-series to uncover patterns of movement or transportation usage over various periods (daily, weekly, monthly, etc.). This will help us understand and predict changes in the user's transportation habits.
 
-<!-- the following is just a placeholder text, remove it!-->
-Philosophy oneself passion play fearful self noble zarathustra deceptions sexuality. Endless ocean of oneself dead ocean. Selfish decrepit.
+4.  **User Profiling:**
+We will segment users based on their transportation mode and travel patterns. Creating these profiles could provide insights into different types of users or behaviors, and allow us to tailor interventions or recommendations to specific user groups.
 
-## Discussion
+## **Results**
 
-<!-- the following is just a placeholder text, remove it!-->
-Justice convictions spirit sexuality insofar free marvelous joy. Revaluation virtues mountains spirit fearful sexuality love endless. Society intentions will noble burying aversion moral. Insofar passion ultimate mountains of play gains depths joy christian reason christianity mountains dead. Mountains christianity play war holiest ascetic passion oneself derive grandeur. Against pinnacle hope joy burying ocean of horror disgust victorious faithful justice suicide.
+In this section, we will present our findings from the statistical and geospatial analyses. We will provide clear and concise visualizations to illustrate patterns and trends in the data, such as the distribution of different modes of transportation, the distances traveled by different modes of transportation, and the temporal variations in these variables.
+
+## **Discussion**
+
+We will discuss our findings in the context of our research questions. We will interpret the results of our analyses and discuss whether these results align with our expectations or contradict them. We will also discuss potential factors that might explain any unexpected findings.
 
