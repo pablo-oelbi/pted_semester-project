@@ -10,20 +10,43 @@ library(sp)
 library(tmap)
 library(tmaptools)
 
+library(dplyr)
+library(purrr)
+
+# Define a function to get the trips for a single user
+get_trips <- function(df) {
+  df <- df %>%
+    arrange(datetime) %>%  # make sure the data is in the correct order
+    mutate(time_diff = c(0, difftime(datetime[-1], datetime[-n()], units = "mins"))) %>% 
+    mutate(trip_id = cumsum(transport_mode != lag(transport_mode, default = transport_mode[1]) | time_diff > 15)) %>%
+    mutate(next_transport_mode_tmp = lead(transport_mode, default = NA),
+           next_trip_id = trip_id+1)%>%
+    group_by(trip_id) %>%
+    mutate(next_transport_mode = last(next_transport_mode_tmp)) 
+    #fill(next_transport_mode, .direction = "up")
+  
+  df$next_transport_mode_tmp <- NULL
+  
+  return(df)
+}
+
+
 # Import and prepare data
 posmo <- read_delim("data/posmo_complete.csv")
 
-# Keep only the necessary columns
-posmo <- select(posmo, datetime,transport_mode, lon_x, lat_y)
-posmo <- posmo |> 
-  drop_na(lon_x) |> 
-  drop_na(transport_mode) |> 
-  mutate(date = as.Date(datetime))
+
+
+# data analysis for the quality
+any(is.na(df))
+
+
+
+posmo_enriched = posmo|>distinct() |> group_by(user_id)|>group_split()|>map_dfr(get_trips)
 
 
 # Add a row number column to posmo
-posmo <- posmo |> 
-  mutate(row_num = row_number())
+#posmo <- posmo |> 
+#  mutate(row_num = row_number())
 
 
 # Retrieve the transportation mode from the previous row
