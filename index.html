@@ -120,10 +120,25 @@ div.csl-indent {
 
 </head>
 
-<body class="fullcontent">
+<body>
 
-<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#abstract" id="toc-abstract" class="nav-link active" data-scroll-target="#abstract">Abstract</a></li>
+  <li><a href="#background-and-research-goals" id="toc-background-and-research-goals" class="nav-link" data-scroll-target="#background-and-research-goals">Background and Research Goals</a></li>
+  <li><a href="#data-description" id="toc-data-description" class="nav-link" data-scroll-target="#data-description">Data Description</a></li>
+  <li><a href="#methods" id="toc-methods" class="nav-link" data-scroll-target="#methods">Methods</a></li>
+  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion"><strong>Discussion</strong></a></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+</div>
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
@@ -154,7 +169,7 @@ div.csl-indent {
 
 </div>
 <section id="abstract" class="level2">
-<h2 class="anchored" data-anchor-id="abstract"><strong>Abstract</strong></h2>
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
 <p>This study examines the relationship between the distance from home to the train station and the transportation mode used. The analysis of trajectory data seeks to identify patterns and factors influencing the choice of transportation. Statistical methods, such as regression models and clustering techniques, are employed. The study is constrained by the small sample size, inaccurate GPS data, and unaccounted for confounding variables.</p>
 </section>
 <section id="background-and-research-goals" class="level2">
@@ -171,7 +186,7 @@ div.csl-indent {
 </ol>
 </section>
 <section id="data-description" class="level2">
-<h2 class="anchored" data-anchor-id="data-description"><strong>Data Description</strong></h2>
+<h2 class="anchored" data-anchor-id="data-description">Data Description</h2>
 <p>The data will consist of GPS trajectory data collected from individuals traveling to nearest train stations. The dataset will include information on the mode of transportation used (e.g., walking, biking, e-bike, car, public transit), as well as the distance between the individual’s home and the train station and in what time this is made. Each record in the dataset includes the following variables:</p>
 <ul>
 <li><p><strong><code>user_id</code></strong>: A unique identifier for each individual in the study. (chr)</p></li>
@@ -182,6 +197,8 @@ div.csl-indent {
 <li><p><strong><code>lon_x</code></strong> and <strong><code>lat_y</code></strong>: The longitude and latitude of each recorded location.(dbl)</p></li>
 </ul>
 <div class="cell">
+<details>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load required libraries</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
@@ -191,10 +208,11 @@ div.csl-indent {
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the data</span></span>
 <span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read_delim</span>(<span class="st">"data/posmo.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
 <section id="methods" class="level2">
-<h2 class="anchored" data-anchor-id="methods"><strong>Methods</strong></h2>
+<h2 class="anchored" data-anchor-id="methods">Methods</h2>
 <p>The following methods will be applied in this study:</p>
 <ol type="1">
 <li><p><strong>Data Preprocessing:</strong> We will begin by handling missing data and converting the <strong><code>datetime</code></strong> column to a suitable format. We will also create new variables that might be useful for our analysis, such as the hour and the month derived from the <strong><code>datetime</code></strong> column.</p></li>
@@ -205,7 +223,7 @@ div.csl-indent {
 </ol>
 </section>
 <section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results"><strong>Results</strong></h2>
+<h2 class="anchored" data-anchor-id="results">Results</h2>
 <p>In this section, we will present our findings from the statistical and geospatial analyses. We will provide clear and concise visualizations to illustrate patterns and trends in the data, such as the distribution of different modes of transportation, the distances traveled by different modes of transportation, and the temporal variations in these variables.</p>
 </section>
 <section id="discussion" class="level2">

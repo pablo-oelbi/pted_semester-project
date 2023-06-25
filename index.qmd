@@ -4,6 +4,16 @@ author: Marijana Maric and Pablo Bischofberger
 output: html
 bibliography: pted_bib.bib
 csl: harvard-educational-review.csl
+format:
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    toc-expand: true
+    
+warning: false
+message: false
 ---
 
 <!-- You can add  your R Code with Code chunks-->
