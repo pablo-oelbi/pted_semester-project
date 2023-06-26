@@ -40,15 +40,180 @@ library(rnaturalearthdata)
 
 ```
 
+
+```{r, echo=FALSE, warning=FALSE}
+# Function to get trips for a single user
+get_trips <- function(df) {
+  df <- df %>%
+    arrange(datetime) %>%  # Sort data by datetime
+    mutate(time_diff = c(0, difftime(datetime[-1], datetime[-n()], units = "mins"))) %>%  # Calculate time difference between records
+    mutate(trip_id = cumsum(transport_mode != lag(transport_mode, default = transport_mode[1]) | time_diff > 15)) %>%  # Identify individual trips
+    mutate(next_transport_mode_tmp = lead(transport_mode, default = NA),
+           last_transport_mode_tmp = lag(transport_mode, default = NA)) %>% 
+    group_by(trip_id) %>%
+    mutate(next_transport_mode = last(next_transport_mode_tmp),
+           last_transport_mode = first(last_transport_mode_tmp)) 
+  df$next_transport_mode_tmp <- NULL
+  df$last_transport_mode_tmp <- NULL
+  return(df)
+}
+
+# Function to calculate distances for one user
+calculate_distances <- function(data) {
+  # Convert the data to sf object for spatial operations
+  coordinates <- st_as_sf(data, coords = c("lon_x", "lat_y"), crs = 4326)
+  coordinates_matrix <- st_coordinates(coordinates)
+  distances <- c(0, distVincentySphere(coordinates_matrix[-1, ], coordinates_matrix[-nrow(data), ]))
+  data$distance <- distances
+  
+  # Calculate cumulative distance and time for each trip
+  data <- data %>%
+    arrange(trip_id, datetime) %>%
+    group_by(trip_id) %>%
+    mutate(
+      cumulative_distance =cumsum(distance),
+      cumulative_time = cumsum(time_diff),
+      elapsed_time = sum(time_diff),
+      total_trip_distance = sum(distance)
+    ) %>%
+    ungroup() %>%
+    mutate(
+      has_train_before = last_transport_mode == 'Train',
+      has_train_after = next_transport_mode == 'Train',
+      has_train_somewhere = transport_mode == "Train" | next_transport_mode == 'Train' | last_transport_mode == 'Train'
+    )
+  
+  return(data)
+}
+
+# Function to visualize a user's trajectory
+visualize_trajectory <- function(user_id, trip_id, data) {
+  # Subset the data for the specified user and trip
+  specific_data <- data %>%
+    dplyr::filter(user_id == !!user_id, trip_id %in% c((!!trip_id - 1), !!trip_id, (!!trip_id + 1)))
+  
+  # If there's no data for this user and trip, return a message
+  if (nrow(specific_data) == 0) {
+    return("No data for this user and trip")
+  }
+  
+  # Convert the data to a spatial object
+  data_sf <- sf::st_as_sf(specific_data, coords = c("lon_x", "lat_y"), crs = 4326)
+  
+  # Set up the map
+  tmap::tmap_mode("view")
+  
+  # Create the map
+  map <- tmap::tm_shape(data_sf) +
+    tmap::tm_dots(col = "transport_mode") +
+    tmap::tm_basemap(server = "OpenStreetMap") +
+    tmap::tm_layout(title = paste("User ID:", user_id, "Trip ID:", trip_id))
+  
+  return(map)
+}
+
+# Function to create a boxplot
+create_boxplot <- function(data, value_column, remove_outliers = FALSE, add_title = FALSE, x_label_visible = TRUE, fixed_order = FALSE) {
+  if (remove_outliers) {
+    data <- data %>%
+      group_by(transport_mode) %>%
+      mutate(Q1 = quantile(get(value_column), 0.25, na.rm = TRUE),
+             Q3 = quantile(get(value_column), 0.75, na.rm = TRUE),
+             IQR = Q3 - Q1) %>%
+      filter(#get(value_column) >= (Q1 - 1.5 * IQR),
+             get(value_column) <= (Q3 + 1.5 * IQR))
+  }
+  
+  
+  
+  
+  if (fixed_order){
+  # Define the fixed order for the transport_mode factor
+  fixed_order <- c("Walk", "Bike", "Bus","Tram", "Car")
+    data$transport_mode <- factor(data$transport_mode, levels = fixed_order)
+  }else{
+    data$transport_mode <- with(data, reorder(transport_mode, get(value_column), FUN = mean)) # Order by mean  
+  }
+  
+  p<-ggplot(data, aes(x = transport_mode, y = !!sym(value_column), fill = transport_mode)) +
+    geom_boxplot(outlier.shape = NA) +  # Don't plot outliers
+    geom_jitter(width = 0.3, size = 1, alpha = 0.5) +
+    stat_summary(fun = mean, geom = "point", shape = 20, size = 3, color = "black", fill = "white") +
+    scale_fill_brewer(palette = "Set3") +
+    labs(y = value_column) +
+    theme_minimal() +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+      axis.title.x = element_text(face = "bold", size = 12),
+      axis.title.y = element_text(face = "bold", size = 12),
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "none"
+    )
+  if (add_title) {
+    p <- p + labs(title = paste("Boxplot of", value_column, "by Transport Mode"))
+  }
+  if (x_label_visible) {
+    p <- p + labs(x = "Transport Mode")
+  }else{
+    p <- p + labs(x = "")
+  }
+  return(p)
+}
+  
+# density plot
+create_density_plot <- function(data, x_var = "distance", group_var = "transport_mode", title = "Density Plot") {
+  library(ggplot2)
+  ggplot(data, aes_string(x = x_var, fill = group_var)) +
+    geom_density(alpha = 0.5) +
+    labs(title = title, x = x_var, y = "Density") +
+    theme_minimal()
+}
+
+combined_boxplot <- function(data, value_columns, remove_outliers = FALSE, title = "Combined Boxplots") {
+  
+  # Create an empty list to store individual plots
+  plot_list <- list()
+  x_label_visible = FALSE
+  # Loop over value_columns to create individual boxplots
+  for (i in 1:length(value_columns)) {
+    if (i == length(value_columns)){
+      x_label_visible = TRUE
+    }
+    p <- create_boxplot(data, value_columns[i], remove_outliers, FALSE, x_label_visible, TRUE)
+    plot_list[[i]] <- p
+  }
+  
+  # Combine the plots using cowplot
+  combined_plot <- cowplot::plot_grid(plotlist = plot_list, ncol = 1)
+  
+  # Add a common title to the combined plot
+  combined_plot <- cowplot::ggdraw(combined_plot) + 
+    cowplot::draw_label(title, fontface = 'bold', size = 14, x = 0.5, y = 0.98)
+  
+  return(combined_plot)
+}
+
+
+```
+
 ## **Abstract**
 
 This study examines the relationship between the distance from home to the train station and the transportation mode used. The analysis of trajectory data seeks to identify patterns and factors influencing the choice of transportation. Statistical methods, such as regression models and clustering techniques, are employed. The study is constrained by the small sample size, inaccurate GPS data, and unaccounted for confounding variables.
 
-## Introduction
+## Background and Research Goals
 
-<!-- the following is just a placeholder text, remove it!-->
+In urban areas, understanding the factors that influence individuals' transport mode choices is crucial for developing efficient and sustainable mobility systems [@europeanenvironmentagencyeea2019]. The proximity to a train station has been identified as a significant factor in determining transport mode preferences [@wibowo2010]. Shorter distances to train stations may encourage walking and public transportation use, while longer distances may lead to increased reliance on private vehicles or alternative modes of transport [@tennoy2022].
 
-Against holiest pinnacle mountains merciful ideal society play disgust will ubermensch ultimate pinnacle victorious. Snare value law gains battle pious intentions revaluation strong. Insofar snare faith ideal oneself.
+The research goals of this study are twofold. First, we aim to investigate the impact of distance to the nearest train station on transport mode choices. By analyzing real-world data and employing statistical methods, such as t-tests, regression analysis, and clustering techniques, we seek to uncover patterns and relationships between distance and transport mode preferences.
+
+Second, we aim to examine the role of different distance measurement methods in analyzing the relationship between distance and transport mode choice. We will explore the effectiveness of statistical methods in uncovering insights and evaluate how the choice of distance measurement influences the analysis. Additionally, we will consider how transportation modes should be categorized to effectively analyze their relationship with distance.
+
+To address these objectives and shed light on the relationship between distance to the nearest train station and transport mode choices, the following research questions will guide our investigation:
+
+1. How does the distance to the nearest train station influence individuals' transport mode preferences?
+2. Can statistical methods, such as t-tests, regression analysis, and clustering techniques, effectively analyze the relationship between distance and transport mode choice, and provide valuable insights?
+3. How does the choice of distance measurement method influence the analysis of the relationship between distance and transport mode?
+4. What are the effective ways to categorize transportation modes to analyze their relationship with distance?
 
 ## **Data Description**
 
@@ -149,7 +314,7 @@ summary_table <- gt(summary_df) %>%
 
 
 # Print the table
-print(summary_table)
+summary_table |> as_raw_html()
 
 ```
 
@@ -178,6 +343,42 @@ In the end we have the following data structure:
 -   **`total_time`**: The total time taken by the participant to complete a particular trip. This measurement is derived from the collected location data and corresponds to the `distance` covered in the same trip. (num)
 
 -   **`direct_distance`**: The shortest possible distance between the starting and ending point of a trip. This measurement is calculated using the 'as the crow flies' method, which ignores any detours or turns taken during the trip. (num)
+
+```{r}
+# Remove duplicated rows, split the data frame by user_id, apply the get_trips function to each group, and bind the results into a single data frame posmo_enriched.
+posmo_enriched <- posmo|>distinct() |> group_by(user_id)|>group_split()|>map_dfr(get_trips)
+
+# Apply the calculate_distances function to each user
+data_by_user <- split(posmo_enriched, posmo_enriched$user_id)
+posmo_enriched <- do.call(rbind, lapply(data_by_user, calculate_distances))
+
+# Filter trips that involve a train
+posmo_enriched_train <- posmo_enriched |> filter(has_train_somewhere == TRUE)
+
+
+```
+
+
+```{r}
+posmo_analysis <- posmo_enriched_train %>%
+  mutate(day = lubridate::date(datetime)) %>%
+  group_by(trip_id, user_id, day, transport_mode, last_transport_mode, next_transport_mode) %>%
+  summarise(
+    distance = sum(distance),
+    total_time = max(cumulative_time),
+    direct_distance = distVincentySphere(c(lon_x[1], lat_y[1]), c(lon_x[n()], lat_y[n()]))
+  ) %>%
+  ungroup()
+
+posmo_train_related <- posmo_analysis |> 
+  filter(next_transport_mode == 'Train' | last_transport_mode == 'Train') |> 
+  filter(transport_mode!= 'Other1' & transport_mode!= 'Train')
+
+
+```
+
+
+
 
 ```{r}
 library(gt)
@@ -236,6 +437,65 @@ print(summary_table)
 ```
 
 ### Selection of relevant trips
+When looking into the summary of the data, we can clearly see that, there is some work need on outlier and identifying just relevant trips. As relevant trips we see the usage of a transport mode to reach a train. So the a relevant trip should not be too long, no be too far. For that we are using different Boxplots and other visuals to identify potential thresholds for the data. 
+
+#### a. Initial state
+
+In examining the box-plots, it's evident that the outliers significantly influence the overall visual representation, making it challenging to discern underlying patterns. Furthermore, it's noteworthy that each transportation mode exhibits distinct outlier patterns across different measures. This visualization reinforces the necessity of further scrutinizing and refining our data, as outlined in the subsequent sections of this research project.
+
+```{r}
+combined_boxplot(data = posmo_train_related, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = FALSE)
+```
+#### b. Performed analysis
+The purpose of this analysis is to identify and isolate relevant trajectories for different modes of transport—specifically, walk, car, bike, bus, and tram. The relevance of a trip is determined based on a set of pre-defined criteria that include speed and total time of the trip. 
+
+For each mode of transport, the dataset is first filtered to include only the relevant mode. This subset of data is then further filtered based on the specific criteria for that mode of transport. 
+
+For instance, in the case of walking, trips are considered relevant if the calculated speed is between 2 and 160 (units not specified) and the total time of the trip is less than 60 minutes. Similar criteria are defined for other modes of transport, but with different values to account for the unique characteristics of each mode. For example, car trips are considered relevant if they are less than 30 minutes and the distance is less than 10,000 (units not specified).
+
+After the relevant trips for each mode of transport are identified, they are combined back into a single dataset for further analysis. This structured and modular approach ensures that the unique characteristics of each mode of transport are taken into account, leading to more accurate and meaningful results.
+
+The analysis for each mode of transport includes the generation of plots and boxplots to visualize the total time, trip speed, and distance, allowing for the identification and inspection of potential outliers. This approach not only helps in refining the criteria for determining relevant trips but also aids in understanding the data and identifying patterns or anomalies.
+
+In summary, this multi-stage approach is designed to identify the most relevant trips for each mode of transport. The filtering of the data based on intuitive and mode-specific criteria, coupled with visualization techniques, ensures a comprehensive and accurate analysis.
+
+### c. Final state
+```{r filter_data_for_relevant_trips}
+#add average speed
+posmo_train_related <- posmo_train_related |> mutate(tripspeed = distance/total_time) |>
+  arrange(tripspeed)
+# filter for walking
+df_walk <- posmo_train_related %>% 
+  filter(transport_mode == "Walk" & tripspeed >= 2 & tripspeed <= 160 & total_time < 60)
+
+# filter for car
+df_car <- posmo_train_related %>% 
+  filter(transport_mode == "Car" & tripspeed > 0 & total_time < 30 & distance < 10000)
+
+# filter for bike
+df_bike <- posmo_train_related %>% 
+  filter(transport_mode == "Bike" & tripspeed > 0 & total_time < 120 & distance < 50000)
+
+# filter for bus
+df_bus <- posmo_train_related %>% 
+  filter(transport_mode == "Bus" & tripspeed > 0 & total_time < 120 & distance < 50000)
+
+# filter for tram
+df_tram <- posmo_train_related %>% 
+  filter(transport_mode == "Tram" & tripspeed > 0 & total_time < 60 & distance < 50000)
+
+# combine the data frames
+posmo_train_related_filtered <- bind_rows(df_walk, df_car, df_bike, df_bus, df_tram)
+
+
+```
+
+After all transformation, we receive a very promising data set: 
+
+```{r}
+combined_boxplot(data = posmo_train_related_filtered, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = FALSE)
+```
+
 
 ## **Methods**
 
@@ -257,112 +517,6 @@ In this section, we will present our findings from the statistical and geospatia
 
 ## **Discussion**
 
-We will discuss our findings in the context of our research questions. We will interpret the results of our analyses and discuss whether these results align with our expectations or contradict them. We will also discuss potential factors that might explain any unexpected findings.
-=======
----
-title: Commuting Mode Choice based on distance to the next train station
-author: Marijana Maric and Pablo Bischofberger
-output: html
-bibliography: pted_bib.bib
-csl: harvard-educational-review.csl
-format:
-  html:
-    code-fold: true
-    toc: true
-    toc-depth: 4
-    toc-location: left
-    toc-expand: true
-    
-warning: false
-message: false
----
-
-<!-- You can add  your R Code with Code chunks-->
-
-```{r}
-#| echo: false
-#| warning: false
-#| message: false
-
-# You can set chunk options individually per code chunk, as was done with this
-# code chunk.
-
-# echo: false           hides the code from the generated output
-# warning: false        hides warnings from the generated output
-# message: false        hides messages from the generated output
-
-# To apply the setting for all code chunks, add the options to the yaml header of the document (in between the ---) without the preceeding "#|".
-
-```
-
-## Abstract
-
-This study examines the relationship between the distance from home to the train station and the transportation mode used. The analysis of trajectory data seeks to identify patterns and factors influencing the choice of transportation. Statistical methods, such as regression models and clustering techniques, are employed. The study is constrained by the small sample size, inaccurate GPS data, and unaccounted for confounding variables.
-
-## Background and Research Goals
-
-In urban areas, understanding the factors that influence individuals' transport mode choices is crucial for developing efficient and sustainable mobility systems [@europeanenvironmentagencyeea2019]. The proximity to a train station has been identified as a significant factor in determining transport mode preferences [@wibowo2010]. Shorter distances to train stations may encourage walking and public transportation use, while longer distances may lead to increased reliance on private vehicles or alternative modes of transport [@tennoy2022].
-
-The research goals of this study are twofold. First, we aim to investigate the impact of distance to the nearest train station on transport mode choices. By analyzing real-world data and employing statistical methods, such as t-tests, regression analysis, and clustering techniques, we seek to uncover patterns and relationships between distance and transport mode preferences.
-
-Second, we aim to examine the role of different distance measurement methods in analyzing the relationship between distance and transport mode choice. We will explore the effectiveness of statistical methods in uncovering insights and evaluate how the choice of distance measurement influences the analysis. Additionally, we will consider how transportation modes should be categorized to effectively analyze their relationship with distance.
-
-To address these objectives and shed light on the relationship between distance to the nearest train station and transport mode choices, the following research questions will guide our investigation:
-
-1. How does the distance to the nearest train station influence individuals' transport mode preferences?
-2. Can statistical methods, such as t-tests, regression analysis, and clustering techniques, effectively analyze the relationship between distance and transport mode choice, and provide valuable insights?
-3. How does the choice of distance measurement method influence the analysis of the relationship between distance and transport mode?
-4. What are the effective ways to categorize transportation modes to analyze their relationship with distance?
-
-## Data Description
-
-The data will consist of GPS trajectory data collected from individuals traveling to nearest train stations. The dataset will include information on the mode of transportation used (e.g., walking, biking, e-bike, car, public transit), as well as the distance between the individual's home and the train station and in what time this is made. Each record in the dataset includes the following variables:
-
--   **`user_id`**: A unique identifier for each individual in the study. (chr)
-
--   **`datetime`**: The date and time of each recorded location. (dttm)
-
--   **`weekday`**: The day of the week. (chr)
-
--   **`place_name`**: The name of the place associated with each recorded location.(chr)
-
--   **`transport_mode`**: The mode of transportation used by the individual (e.g., walking, biking, car, public transit).(chr)
-
--   **`lon_x`** and **`lat_y`**: The longitude and latitude of each recorded location.(dbl)
-
-```{r, warning=FALSE, echo=TRUE, message = FALSE}
-# Load required libraries
-library(readr)
-library(sf)
-library(dplyr)
-library(ggplot2)
-library(lubridate)
-
-# Load the data
-data <- read_delim("data/posmo.csv")
-
-```
-
-## Methods
-
-The following methods will be applied in this study:
-
-1.  **Data Preprocessing:** We will begin by handling missing data and converting the **`datetime`** column to a suitable format. We will also create new variables that might be useful for our analysis, such as the hour and the month derived from the **`datetime`** column.
-
-2.  **Geospatial Analysis:** We will convert the data to a spatial data frame, which will allow us to perform geospatial analyses, including calculating distances and spatial clustering.
-
-3.  **Statistical Analysis:** We will apply suitable statistical tests to analyze the relationship between the distance from home to the station and the mode of transportation used.
-
-4.  **Time-series Analysis:** Considering the timestamp data, we will explore it as a time-series to uncover patterns of movement or transportation usage over various periods (daily, weekly, monthly, etc.). This will help us understand and predict changes in the user's transportation habits.
-
-5.  **User Profiling:** We will segment users based on their transportation mode and travel patterns. Creating these profiles could provide insights into different types of users or behaviors, and allow us to tailor interventions or recommendations to specific user groups.
-
-## Results
-
-In this section, we will present our findings from the statistical and geospatial analyses. We will provide clear and concise visualizations to illustrate patterns and trends in the data, such as the distribution of different modes of transportation, the distances traveled by different modes of transportation, and the temporal variations in these variables.
-
-## **Discussion**
-
 The findings of this study contribute to our understanding of how distance to the nearest train station impacts transport mode choices and the effectiveness of statistical methods in analysing this relationship. It is important to acknowledge that the conclusions drawn from this study are based on a small sample size consisting solely of students in this module, which may introduce limitations and potential biases. Nonetheless, the research questions can be addressed as follows:
 
 Examining the influence of distance to the nearest train station on transport mode choice, the analysis revealed a clear correlation between distance and transport mode preferences. Shorter distances to the train station appeared to encourage walking and public transportation use, while longer distances were associated with a higher reliance on private vehicles or alternative modes of transport. These findings align with previous research [@wibowo2010], highlighting the significance of proximity to train stations in shaping transport mode choices.
@@ -372,6 +526,3 @@ Regarding the effectiveness of statistical methods in analysing the relationship
 Considering the influence of different distance measurement methods on the analysis of the distance-transport mode relationship, it is worth noting that the choice of measurement can impact the analysis. Different methods, such as straight-line distance, network distance, or travel time, may capture different aspects of accessibility and travel behaviour. Exploring the effects of various distance measurement methods in future research would provide a more comprehensive understanding of their influence on the relationship between distance and transport mode choice.
 
 In summary, this study provides valuable insights into the relationship between distance to the nearest train station and transport mode choices. However, the findings should be interpreted within the limitations of a small and specific sample. Further research with larger and more diverse samples is needed to validate and extend these findings, ensuring a more robust understanding of the factors influencing transport mode choices in urban areas.
-
-
->>>>>>> 65cd770ef0c7c5f5773340a0e4ec2fe5b298b8df
