@@ -21,6 +21,23 @@ output: html
 
 # To apply the setting for all code chunks, add the options to the yaml header of the document (in between the ---) without the preceeding "#|".
 
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(sf)
+library(sp)
+library(tmap)
+library(tmaptools)
+library(geosphere)
+library(purrr)
+library(cowplot)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
 ```
 
 
@@ -36,7 +53,9 @@ Against holiest pinnacle mountains merciful ideal society play disgust will uber
 
 ## **Data Description**
 
-The data will consist of GPS trajectory data collected from individuals traveling to nearest train stations. The dataset will include information on the mode of transportation used (e.g., walking, biking, e-bike, car, public transit), as well as the distance between the individual's home and the train station and in what time this is made. Each record in the dataset includes the following variables:
+### *Dataset*
+The data consist of GPS trajectory data collected from 9 individuals between beginning April 2023 and end of May 2023 which were tracking their movement with the POSMO application. The Posmo Project app automatically records any walking, cycling, transit and car driving you each individual is performing. The starting dataset has the following structure and includes the following Variables:  
+
 
 -   **`user_id`**: A unique identifier for each individual in the study. (chr)
 
@@ -44,25 +63,183 @@ The data will consist of GPS trajectory data collected from individuals travelin
 
 -   **`weekday`**: The day of the week. (chr)
 
--   **`place_name`**: The name of the place associated with each recorded location.(chr)
-
--   **`transport_mode`**: The mode of transportation used by the individual (e.g., walking, biking, car, public transit).(chr)
+-   **`transport_mode`**: The mode of transportation used by the individual (e.g., walking, biking, car, bus or tram).(chr)
 
 -   **`lon_x`** and **`lat_y`**: The longitude and latitude of each recorded location.(dbl)
 
-```{r, warning=FALSE, echo=TRUE, message = FALSE}
-# Load required libraries
-library(readr)
-library(sf)
-library(dplyr)
-library(ggplot2)
-library(lubridate)
+```{r data_loading}
+# List all CSV files in the directory
+file_list <- list.files(path = "data", pattern = "*.csv", full.names = TRUE)
 
-# Load the data
-data <- read_delim("data/posmo.csv")
+# Read each CSV file into a data frame and concatenate them together
+posmo <- do.call(rbind, lapply(file_list, function(x) read.csv(x, stringsAsFactors = FALSE)))
+
+# Convert the datetime column to POSIXct type
+posmo$datetime <- as.POSIXct(posmo$datetime, format = "%Y-%m-%dT%H:%M:%S", tz = "GMT")
+
+# Convert user_id to a factor and then to numeric
+posmo$user_id <- as.numeric(factor(posmo$user_id))
+
+# Keep only the necessary columns and combine walk and run
+posmo <- posmo |> 
+  arrange(user_id, datetime) |>  
+  select(user_id, datetime,transport_mode, lon_x, lat_y) |>
+  mutate(transport_mode = ifelse(transport_mode == 'Run', 'Walk', transport_mode),
+         transport_mode = ifelse(transport_mode == 'Funicular', 'Tram', transport_mode))
+
+# Check for NA's and empty strings in the data
+any(is.na(posmo))
+
+# check which columns: 
+apply(posmo, 2, function(x) any(is.na(x)))
+
+#remove na data
+posmo <- na.omit(posmo)
+
+any(sapply(posmo |>select(user_id,transport_mode, lon_x, lat_y), function(x) any(x == "")))
+
+# Create a data frame with non-empty transport_mode
+posmo <- posmo|>filter(transport_mode != "")
+```
+
+
+
+```{r summary_table, warning=FALSE, echo=TRUE, message = FALSE}
+
+
+library(gt)
+
+# Create a summarized dataframe
+summary_df <- posmo %>%
+  summarise(
+    num_users = n_distinct(user_id),
+    num_data_points = n(),
+    num_datetimes = n_distinct(datetime),
+    min_date = min(datetime, na.rm = TRUE),
+    max_date = max(datetime, na.rm = TRUE),
+    num_transport_modes = n_distinct(transport_mode),
+    avg_longitude = mean(lon_x, na.rm = TRUE),
+    max_longitude = max(lon_x, na.rm = TRUE),
+    min_longitude = min(lon_x, na.rm = TRUE),
+    avg_latitude = mean(lat_y, na.rm = TRUE),
+    max_latitude = max(lat_y, na.rm = TRUE),
+    min_latitude = min(lat_y, na.rm = TRUE)
+  )
+
+# Convert to gt table
+summary_table <- gt(summary_df) %>%
+  tab_header(
+    title = "Summary of Posmo Data"
+  ) %>%
+  cols_label(
+    num_users = "Number of Users",
+    num_data_points = "Total number of datapoints",
+    num_datetimes = "Number of Datetimes",
+    min_date = "Minimal recorded datetime",
+    max_date = "Maximum recorded datetime",
+    num_transport_modes = "Number of Transport Modes",
+    avg_longitude = "Average Longitude",
+    max_longitude = "Maximum Longitude",
+    min_longitude = "Minimum Longitude",
+    avg_latitude = "Average Latitude",
+    max_latitude = "Maximum Latitude",
+    min_latitude = "Minimum Latitude"
+  ) %>%
+  fmt_number(
+    columns = vars(avg_longitude, max_longitude, min_longitude, avg_latitude, max_latitude, min_latitude),
+    decimals = 2
+  )
+
+
+# Print the table
+print(summary_table)
 
 ```
 
+
+### Data preparation
+
+The process of data cleansing, a key element in any research project, is optimized using well-defined steps. Initially, data from CSV files are compiled into a combined data frame. Subsequently, the data sets are converted into appropriate datatypes to ensure consistency with the following steps of the analysis. The transport mode column is modified to combine similar types like 'Run' and 'Walk'. This step helps to increase the intensity of subsequent analyses. This is followed by a rigorous data cleaning process to detect and delete any instances of NA values or empty strings, ensuring data integrity and completeness.
+
+Once the initial data cleaning is completed, the data cycle is further enhanced with analytical metrics. A unique identifier 'trip_id' is calculated for each particular trip, a it provides a systematic way of classifying and analyzing data. Subsequently, the data are grouped according to each trip, and then two measures of distance (in meters) and elapsed time (in minutes) are calculated for each trip. Lastly, the data set is filtered to store only trips that occur immediately before or after a train trip. This strategic selection of data lays the foundation for answering the research questions, focusing on the patterns associated with the mode of transportation before starting a train trip. 
+
+In the end we have the following data structure: 
+
+-   **`trip_id`**: A unique identifier assigned to each individual journey made by a participant in the study. This identifier is used to differentiate between different trips made by the same user. (int)
+
+-   **`user_id`**: A unique identifier for each participant in the study. This identifier is used to differentiate between the data of different participants. (num)
+
+-   **`day`**: The date on which the recorded location data was collected. (Date)
+
+-   **`transport_mode`**: The mode of transportation used by the participant at a given recorded location. This could include various modes such as walking, using a bike, car, bus, tram, or other. (chr)
+
+-   **`last_transport_mode`**: The mode of transportation that was used by the participant directly before the current `transport_mode`. This provides a sense of sequence in the participant's mode of transportation. (chr)
+
+-   **`next_transport_mode`**: The mode of transportation that was used by the participant directly after the current `transport_mode`. This, along with `last_transport_mode`, provides a context to the sequence of transportation modes used by the participant. (chr)
+
+-   **`distance`**: The total distance covered by the participant during a particular trip. This measurement is derived from the collected location data. (num)
+
+-   **`total_time`**: The total time taken by the participant to complete a particular trip. This measurement is derived from the collected location data and corresponds to the `distance` covered in the same trip. (num)
+
+-   **`direct_distance`**: The shortest possible distance between the starting and ending point of a trip. This measurement is calculated using the 'as the crow flies' method, which ignores any detours or turns taken during the trip. (num)
+
+```{r}
+library(gt)
+library(dplyr)
+
+# Create a summarized dataframe
+summary_df <- posmo_analysis %>%
+  summarise(
+    num_trips = n_distinct(trip_id),
+    num_users = n_distinct(user_id),
+    num_days = n_distinct(day),
+    min_day = min(day, na.rm = TRUE),
+    max_day = max(day, na.rm = TRUE),
+    num_transport_modes = n_distinct(transport_mode),
+    avg_distance = mean(distance, na.rm = TRUE),
+    max_distance = max(distance, na.rm = TRUE),
+    min_distance = min(distance, na.rm = TRUE),
+    avg_total_time = mean(total_time, na.rm = TRUE),
+    max_total_time = max(total_time, na.rm = TRUE),
+    min_total_time = min(total_time, na.rm = TRUE),
+    avg_direct_distance = mean(direct_distance, na.rm = TRUE),
+    max_direct_distance = max(direct_distance, na.rm = TRUE),
+    min_direct_distance = min(direct_distance, na.rm = TRUE)
+  )
+
+# Convert to gt table
+summary_table <- gt(summary_df) %>%
+  tab_header(
+    title = "Summary of Posmo Analysis Data"
+  ) %>%
+  cols_label(
+    num_trips = "Number of Trips",
+    num_users = "Number of Users",
+    num_days = "Number of Days",
+    min_day = "Earliest Recorded Day",
+    max_day = "Latest Recorded Day",
+    num_transport_modes = "Number of Transport Modes",
+    avg_distance = "Average Distance (m)",
+    max_distance = "Maximum Distance (m)",
+    min_distance = "Minimum Distance (m)",
+    avg_total_time = "Average Total Time (min)",
+    max_total_time = "Maximum Total Time (min)",
+    min_total_time = "Minimum Total Time (min)",
+    avg_direct_distance = "Average Direct Distance (m)",
+    max_direct_distance = "Maximum Direct Distance (m)",
+    min_direct_distance = "Minimum Direct Distance (m)"
+  ) %>%
+  fmt_number(
+    columns = vars(avg_distance, max_distance, min_distance, avg_total_time, max_total_time, min_total_time, avg_direct_distance, max_direct_distance, min_direct_distance),
+    decimals = 2
+  )
+
+# Print the table
+print(summary_table)
+
+```
+
+### Selection of relevant trips
 
 ## **Methods**
 

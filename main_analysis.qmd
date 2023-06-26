@@ -272,6 +272,53 @@ tm_shape(posmo_within_switzerland) +
   tm_layout(title = "Trips within Switzerland")
 ```
 ```{r}
+library(dplyr)
+library(leaflet)
+
+# Define longitude and latitude range of Zurich region
+zurich_lon_range <- c(8.3, 8.6)
+zurich_lat_range <- c(47.3, 47.5)
+
+# Filter posmo_enriched_train to include only coordinates within Zurich region
+posmo_enriched_train_zurich <- posmo_enriched_train %>%
+  filter(lon_x >= zurich_lon_range[1] & lon_x <= zurich_lon_range[2] &
+         lat_y >= zurich_lat_range[1] & lat_y <= zurich_lat_range[2])
+
+# Create color factor palette for transport modes
+pal <- colorFactor(c("navy", "red", "yellow", "orange", "green", "blue"), 
+                   domain = c("Walk", "Bike", "Car", "Tram", "Train", "Bus"))
+
+# Create popup content
+content <- paste("Cluster: ", posmo_enriched_train_zurich$trip_id, "<br>",
+                 "Transport mode: ", posmo_enriched_train_zurich$transport_mode)
+
+# Create overview map
+overview_map <- leaflet(posmo_enriched_train_zurich) %>% 
+  addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(opacity = 0.6)) %>%
+  addRectangles(
+      lng1=zurich_lon_range[1], lat1=zurich_lat_range[1],
+      lng2=zurich_lon_range[2], lat2=zurich_lat_range[2],
+      fillColor = "transparent", popup = "Zurich Region") %>%
+  addCircleMarkers(color = ~pal(transport_mode), radius = 1, popup = content, 
+                   lng = ~lon_x, lat = ~lat_y) %>%
+  addLegend(pal = pal, values = ~transport_mode, position = "bottomright")
+
+# Display map
+overview_map
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
 
 
 posmo_train_related <- posmo_analysis |> 
@@ -280,8 +327,8 @@ posmo_train_related <- posmo_analysis |>
 
 posmo_train_related
 
-create_boxplot(data = posmo_train_related, value_column = "distance", remove_outliers = TRUE)
-combined_boxplot(data = posmo_train_related, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = TRUE)
+create_boxplot(data = posmo_train_related, value_column = "distance", remove_outliers = FALSE)
+combined_boxplot(data = posmo_train_related, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = FALSE)
 
 ```
 #Time and speed analysis
@@ -322,8 +369,8 @@ posmo_train_related <- bind_rows(walk_data, other_data)
 
 ```
 ```{r}
-create_boxplot(data = posmo_train_related, value_column = "distance", remove_outliers = TRUE)
-combined_boxplot(data = posmo_train_related, value_columns = c("distance", "direct_distance", "total_time", "tripspeed"), remove_outliers = TRUE)
+create_boxplot(data = posmo_train_related, value_column = "distance", remove_outliers = FALSE)
+combined_boxplot(data = posmo_train_related, value_columns = c("distance", "direct_distance", "total_time", "tripspeed"), remove_outliers = FALSE)
 ```
 
 ## CAR
@@ -489,6 +536,180 @@ create_boxplot(data = posmo_train_related, value_column = "distance", remove_out
 create_boxplot(data = posmo_train_related, value_column = "total_time", remove_outliers = FALSE)
 combined_boxplot(data = posmo_train_related, value_columns = c("distance", "total_time"), remove_outliers = FALSE)
 ```
+
+```{r}
+# Convert transport_mode to a factor
+posmo_train_related$transport_mode <- as.factor(posmo_train_related$transport_mode)
+
+# Perform ANOVA
+model <- aov(distance ~ transport_mode, data = posmo_train_related)
+summary(model)
+
+# The output of the Analysis of Variance (ANOVA) test indicates that there are statistically significant differences in the average distances traveled among the different modes of transport.
+# 
+# The term 'significant' in this context means that the observed differences in the means are unlikely to have occurred by chance. The p-value, which is less than 0.0000000000000002, supports this finding. A p-value is a measure of the probability that an observed difference could have occurred just by random chance. The smaller the p-value, the greater the statistical evidence you have to reject the null hypothesis (which in this case is that there is no difference in means across the groups). A commonly used threshold to denote statistical significance is 0.05, and any p-value less than this is generally described as statistically significant.
+# 
+# The F-value of 47.97 is quite large, indicating a strong relationship between the mode of transport and the distance traveled. This F-value is a ratio of the variance between the groups (variance in distances across different transport modes) to the variance within the groups (variance in distances within the same mode of transport). A larger F-value suggests that the variance between groups is significantly greater than the variance within groups, further strengthening the conclusion that the mode of transport has a significant impact on the distance traveled.
+# 
+# In summary, the output of the ANOVA test strongly suggests that the mode of transport used has a significant effect on the distance traveled. That is, the average distance traveled varies significantly depending on whether the mode of transport is a bike, bus, car, tram, etc. Further analysis (such as a post-hoc test) could be conducted to determine which specific modes of transport are significantly different from each other in terms of the distance traveled.
+# 
+
+
+# Perform the Tukey HSD test
+posthoc <- TukeyHSD(model)
+
+# Print the results
+print(posthoc)
+```
+
+
+```{r}
+# Ensure the nnet package is installed
+if (!require(nnet)) {
+  install.packages("nnet")
+}
+
+# Load the package
+library(nnet)
+
+# Build the multinomial logistic regression model
+model <- multinom(transport_mode ~ distance + total_time, data = posmo_train_related)
+
+# Show the summary of the model
+summary(model)
+
+```
+```{r}
+# Install and load the package
+install.packages("rpart")
+library(rpart)
+
+# Fit the model
+model <- rpart(transport_mode ~ distance + total_time, data = posmo_train_related)
+
+# Print the model
+print(model)
+
+# Plot the tree
+plot(model)
+text(model)
+
+```
+
+
+n=202: This means that the total number of data points (or rows) that the model was trained on is 202.
+
+node): Each node in the tree is represented by a number. The root node (the very first split) is node 1.
+
+split: This shows the condition that was used to split the data at each node. For example, distance < 970.5924 means that the data was split into two groups: one where distance is less than 970.5924, and one where distance is greater than or equal to 970.5924.
+
+n: This shows the number of data points at each node.
+
+loss: This represents the misclassification error for each node. It's the number of misclassified instances.
+
+yval: This is the predicted class (mode of transport) for each node.
+
+yprob: These are the probabilities of each class (mode of transport) at each node. The order of the classes is the same as in the yval column.
+
+* denotes terminal node: Terminal nodes, also known as leaf nodes, are the final nodes where the data points are classified. They are marked with a *.
+
+The tree starts with the root node (node 1). Here, the model checks whether distance is less than 970.5924. If it is, the data point goes to node 2, otherwise it goes to node 3. This process continues until it reaches a terminal node, which provides the final prediction.
+
+For example, if a data point has distance less than 970.5924, it is classified as 'Walk'. If distance is greater than or equal to 970.5924 but total_time is less than 9.15 and distance is greater than or equal to 2135.939, it is classified as 'Car'.
+
+This tree structure enables you to trace through the paths and understand how the model is making decisions based on the distance and total_time features.
+
+
+
+```{r}
+# Install and load the package
+install.packages("randomForest")
+library(randomForest)
+
+# Fit the model
+model <- randomForest(transport_mode ~ distance + total_time, data = posmo_train_related)
+
+# Print the model
+print(model)
+
+# Importance of each predictor
+importance(model)
+
+```
+
+This output is from a random forest model. Here's how to interpret it:
+
+Type of random forest: classification: This indicates that the random forest was used for a classification problem, which is consistent with the goal of predicting the mode of transport.
+
+Number of trees: 500: This is the number of trees that were built in the random forest. In a random forest, many decision trees are built and their results are aggregated to make a final prediction. The number of trees is a hyperparameter that can be tuned to optimize model performance.
+
+No. of variables tried at each split: 1: At each split in each decision tree, the model considers 1 variable to determine the best split. This is another hyperparameter of the model.
+
+OOB estimate of error rate: 37.13%: This is the out-of-bag (OOB) error rate, which is a method of measuring the prediction error of random forests. The OOB error is the average error for each observation calculated using predictions from the trees that did not have that observation in their bootstrap sample. In this case, the model misclassified about 37.13% of the observations.
+
+Confusion matrix: This matrix provides a breakdown of the model's performance for each class. The rows represent the true class and the columns represent the predicted class. For example, the model correctly predicted 'Walk' 81 times, but misclassified 1 'Walk' as 'Bike', 1 'Walk' as 'Bus', 2 'Walk' as 'Tram', and 3 'Walk' as 'Car'. The class.error column shows the misclassification rate for each class.
+
+MeanDecreaseGini: The Gini index is a measure of the total variance across the classes. It is used in the CART algorithm for building decision trees. The MeanDecreaseGini column shows the total decrease in the Gini index that results from splits over a given predictor, averaged over all trees. A larger value indicates a more important predictor. In this case, distance had a larger effect on the model predictions than total_time.
+
+```{r}
+# Install and load the package
+install.packages("xgboost")
+library(xgboost)
+
+# Prepare the data
+data <- data.matrix(posmo_train_related[, c("distance", "total_time")])
+label <- posmo_train_related$transport_mode
+
+# Fit the model
+model <- xgboost(data = data, label = label, nrounds = 10, objective = "multi:softmax", num_class = length(unique(label)))
+
+# Print the model
+print(model)
+
+```
+
+
+```{r}
+# Install and load the package
+install.packages("nnet")
+library(nnet)
+# Convert 'transport_mode' to a factor
+posmo_train_related$transport_mode <- as.factor(posmo_train_related$transport_mode)
+
+
+# Fit the model
+model <- nnet(transport_mode ~ distance + total_time, data = posmo_train_related, size = 10, rang = 0.1, decay = 5e-4, maxit = 200)
+
+# Print the model
+print(model)
+
+
+# Predict on new data
+new_data <- data.frame(distance = c(1000, 2000, 3000),
+                       total_time = c(10, 20, 30))
+predictions <- predict(model, newdata = new_data, type = "class")
+
+# Print the predictions
+print(predictions)
+
+
+```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
