@@ -4,7 +4,6 @@ author: Marijana Maric and Pablo Bischofberger
 output: html
 ---
 
-
 <!-- You can add  your R Code with Code chunks-->
 
 ```{r}
@@ -40,22 +39,21 @@ library(rnaturalearthdata)
 
 ```
 
-
 ## **Abstract**
 
 This study examines the relationship between the distance from home to the train station and the transportation mode used. The analysis of trajectory data seeks to identify patterns and factors influencing the choice of transportation. Statistical methods, such as regression models and clustering techniques, are employed. The study is constrained by the small sample size, inaccurate GPS data, and unaccounted for confounding variables.
 
-
 ## Introduction
 
 <!-- the following is just a placeholder text, remove it!-->
+
 Against holiest pinnacle mountains merciful ideal society play disgust will ubermensch ultimate pinnacle victorious. Snare value law gains battle pious intentions revaluation strong. Insofar snare faith ideal oneself.
 
 ## **Data Description**
 
 ### *Dataset*
-The data consist of GPS trajectory data collected from 9 individuals between beginning April 2023 and end of May 2023 which were tracking their movement with the POSMO application. The Posmo Project app automatically records any walking, cycling, transit and car driving you each individual is performing. The starting dataset has the following structure and includes the following Variables:  
 
+The data consist of GPS trajectory data collected from 9 individuals between beginning April 2023 and end of May 2023 which were tracking their movement with the POSMO application. The Posmo Project app automatically records any walking, cycling, transit and car driving you each individual is performing. The starting dataset has the following structure and includes the following Variables:
 
 -   **`user_id`**: A unique identifier for each individual in the study. (chr)
 
@@ -101,8 +99,6 @@ any(sapply(posmo |>select(user_id,transport_mode, lon_x, lat_y), function(x) any
 # Create a data frame with non-empty transport_mode
 posmo <- posmo|>filter(transport_mode != "")
 ```
-
-
 
 ```{r summary_table, warning=FALSE, echo=TRUE, message = FALSE}
 
@@ -156,14 +152,13 @@ print(summary_table)
 
 ```
 
-
 ### Data preparation
 
 The process of data cleansing, a key element in any research project, is optimized using well-defined steps. Initially, data from CSV files are compiled into a combined data frame. Subsequently, the data sets are converted into appropriate datatypes to ensure consistency with the following steps of the analysis. The transport mode column is modified to combine similar types like 'Run' and 'Walk'. This step helps to increase the intensity of subsequent analyses. This is followed by a rigorous data cleaning process to detect and delete any instances of NA values or empty strings, ensuring data integrity and completeness.
 
-Once the initial data cleaning is completed, the data cycle is further enhanced with analytical metrics. A unique identifier 'trip_id' is calculated for each particular trip, a it provides a systematic way of classifying and analyzing data. Subsequently, the data are grouped according to each trip, and then two measures of distance (in meters) and elapsed time (in minutes) are calculated for each trip. Lastly, the data set is filtered to store only trips that occur immediately before or after a train trip. This strategic selection of data lays the foundation for answering the research questions, focusing on the patterns associated with the mode of transportation before starting a train trip. 
+Once the initial data cleaning is completed, the data cycle is further enhanced with analytical metrics. A unique identifier 'trip_id' is calculated for each particular trip, a it provides a systematic way of classifying and analyzing data. Subsequently, the data are grouped according to each trip, and then two measures of distance (in meters) and elapsed time (in minutes) are calculated for each trip. Lastly, the data set is filtered to store only trips that occur immediately before or after a train trip. This strategic selection of data lays the foundation for answering the research questions, focusing on the patterns associated with the mode of transportation before starting a train trip.
 
-In the end we have the following data structure: 
+In the end we have the following data structure:
 
 -   **`trip_id`**: A unique identifier assigned to each individual journey made by a participant in the study. This identifier is used to differentiate between different trips made by the same user. (int)
 
@@ -245,7 +240,7 @@ print(summary_table)
 
 The following methods will be applied in this study:
 
-1.  **Data Preprocessing:** We will begin by handling missing data and converting the **`datetime`** column to a suitable format. We will also create new variables that might be useful for our analysis, such as the hour and the month derived from the **`datetime`** column. 
+1.  **Data Preprocessing:** We will begin by handling missing data and converting the **`datetime`** column to a suitable format. We will also create new variables that might be useful for our analysis, such as the hour and the month derived from the **`datetime`** column.
 
 2.  **Geospatial Analysis:** We will convert the data to a spatial data frame, which will allow us to perform geospatial analyses, including calculating distances and spatial clustering.
 
@@ -253,8 +248,7 @@ The following methods will be applied in this study:
 
 4.  **Time-series Analysis:** Considering the timestamp data, we will explore it as a time-series to uncover patterns of movement or transportation usage over various periods (daily, weekly, monthly, etc.). This will help us understand and predict changes in the user's transportation habits.
 
-4.  **User Profiling:**
-We will segment users based on their transportation mode and travel patterns. Creating these profiles could provide insights into different types of users or behaviors, and allow us to tailor interventions or recommendations to specific user groups.
+5.  **User Profiling:** We will segment users based on their transportation mode and travel patterns. Creating these profiles could provide insights into different types of users or behaviors, and allow us to tailor interventions or recommendations to specific user groups.
 
 ## **Results**
 
@@ -263,4 +257,3 @@ In this section, we will present our findings from the statistical and geospatia
 ## **Discussion**
 
 We will discuss our findings in the context of our research questions. We will interpret the results of our analyses and discuss whether these results align with our expectations or contradict them. We will also discuss potential factors that might explain any unexpected findings.
-
