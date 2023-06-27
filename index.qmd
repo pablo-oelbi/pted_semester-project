@@ -1,8 +1,17 @@
-<<<<<<< HEAD
 ---
 title: Commuting Mode Choice based on distance to the next train station
 author: Marijana Maric and Pablo Bischofberger
 output: html
+bibliography: pted_bib.bib
+format:
+  html:
+    code-fold: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    toc-expand: true
+warning: false
+message: false
 ---
 
 <!-- You can add  your R Code with Code chunks-->
@@ -196,7 +205,7 @@ combined_boxplot <- function(data, value_columns, remove_outliers = FALSE, title
 
 ```
 
-## **Abstract**
+## Abstract
 
 This study examines the relationship between the distance from home to the train station and the transportation mode used. The analysis of trajectory data seeks to identify patterns and factors influencing the choice of transportation. Statistical methods, such as regression models and clustering techniques, are employed. The study is constrained by the small sample size, inaccurate GPS data, and unaccounted for confounding variables.
 
@@ -215,11 +224,11 @@ To address these objectives and shed light on the relationship between distance 
 3. How does the choice of distance measurement method influence the analysis of the relationship between distance and transport mode?
 4. What are the effective ways to categorize transportation modes to analyze their relationship with distance?
 
-## **Data Description**
+## Data Description
 
-### *Dataset*
+### Dataset
 
-The data consist of GPS trajectory data collected from 9 individuals between beginning April 2023 and end of May 2023 which were tracking their movement with the POSMO application. The Posmo Project app automatically records any walking, cycling, transit and car driving you each individual is performing. The starting dataset has the following structure and includes the following Variables:
+The data comprises GPS trajectory data that was collected from nine individuals between the beginning of April 2023 and the conclusion of May 2023, who were tracking their movement with the POSMO application. The Posmo Project app automatically records all activities that each individual undertakes on foot, by bike, public transport or by car [@genossenschaftposmoschweiz2022]. The initial data set follows a specific structure and includes the following variables:
 
 -   **`user_id`**: A unique identifier for each individual in the study. (chr)
 
@@ -320,11 +329,11 @@ summary_table |> as_raw_html()
 
 ### Data preparation
 
-The process of data cleansing, a key element in any research project, is optimized using well-defined steps. Initially, data from CSV files are compiled into a combined data frame. Subsequently, the data sets are converted into appropriate datatypes to ensure consistency with the following steps of the analysis. The transport mode column is modified to combine similar types like 'Run' and 'Walk'. This step helps to increase the intensity of subsequent analyses. This is followed by a rigorous data cleaning process to detect and delete any instances of NA values or empty strings, ensuring data integrity and completeness.
+The process of data cleansing, a key element in any research project, is optimized using well-defined steps. Initially, data from CSV files are compiled into a combined data frame. Subsequently, the data sets are converted into appropriate data types to ensure consistency with the following steps of the analysis. The transport mode column is modified to combine similar types like 'Run' and 'Walk'. This step helps to increase the intensity of subsequent analyses. This is followed by a rigorous data cleaning process to detect and delete any instances of NA values or empty strings, ensuring data integrity and completeness.
 
-Once the initial data cleaning is completed, the data cycle is further enhanced with analytical metrics. A unique identifier 'trip_id' is calculated for each particular trip, a it provides a systematic way of classifying and analyzing data. Subsequently, the data are grouped according to each trip, and then two measures of distance (in meters) and elapsed time (in minutes) are calculated for each trip. Lastly, the data set is filtered to store only trips that occur immediately before or after a train trip. This strategic selection of data lays the foundation for answering the research questions, focusing on the patterns associated with the mode of transportation before starting a train trip.
+Once the initial data cleaning is completed, the data cycle is further enhanced with analytical metrics. A unique identifier 'trip_id' is calculated for each particular trip, it provides a systematic way of classifying and analysing data. Subsequently, the data are grouped according to each trip, and then two measures of distance (in meters) and elapsed time (in minutes) are calculated for each trip. Lastly, the data set is filtered to store only trips that occur immediately before or after a train trip. This strategic selection of data lays the foundation for answering the research questions, focusing on the patterns associated with the mode of transportation before starting a train trip.
 
-In the end we have the following data structure:
+In the end, we have the following data structure:
 
 -   **`trip_id`**: A unique identifier assigned to each individual journey made by a participant in the study. This identifier is used to differentiate between different trips made by the same user. (int)
 
@@ -432,16 +441,16 @@ summary_table <- gt(summary_df) %>%
   )
 
 # Print the table
-print(summary_table)
+# print(summary_table)
+summary_table |> as_raw_html()
 
 ```
 
 ### Selection of relevant trips
-When looking into the summary of the data, we can clearly see that, there is some work need on outlier and identifying just relevant trips. As relevant trips we see the usage of a transport mode to reach a train. So the a relevant trip should not be too long, no be too far. For that we are using different Boxplots and other visuals to identify potential thresholds for the data. 
+When looking into the summary of the data, we can clearly see that, there is some work needed on outliers and identifying just relevant trips. As relevant trips, we see the usage of a transport mode to reach a train. So, a relevant trip should not be too long nor be too far. For that, we are using different box plots and other visuals to identify potential thresholds for the data. 
 
 #### a. Initial state
-
-In examining the box-plots, it's evident that the outliers significantly influence the overall visual representation, making it challenging to discern underlying patterns. Furthermore, it's noteworthy that each transportation mode exhibits distinct outlier patterns across different measures. This visualization reinforces the necessity of further scrutinizing and refining our data, as outlined in the subsequent sections of this research project.
+In examining the box plots, it's evident that the outliers significantly influence the overall visual representation, making it challenging to discern underlying patterns. Furthermore, it's noteworthy that each transportation mode exhibits distinct outlier patterns across different measures. This visualization reinforces the necessity of further scrutinizing and refining our data, as outlined in the subsequent sections of this research project.
 
 ```{r}
 combined_boxplot(data = posmo_train_related, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = FALSE)
@@ -455,11 +464,11 @@ For instance, in the case of walking, trips are considered relevant if the calcu
 
 After the relevant trips for each mode of transport are identified, they are combined back into a single dataset for further analysis. This structured and modular approach ensures that the unique characteristics of each mode of transport are taken into account, leading to more accurate and meaningful results.
 
-The analysis for each mode of transport includes the generation of plots and boxplots to visualize the total time, trip speed, and distance, allowing for the identification and inspection of potential outliers. This approach not only helps in refining the criteria for determining relevant trips but also aids in understanding the data and identifying patterns or anomalies.
+The analysis for each mode of transport includes the generation of plots and box-plots to visualize the total time, trip speed, and distance, allowing for the identification and inspection of potential outliers. This approach not only helps in refining the criteria for determining relevant trips, but also aids in understanding the data and identifying patterns or anomalies.
 
 In summary, this multi-stage approach is designed to identify the most relevant trips for each mode of transport. The filtering of the data based on intuitive and mode-specific criteria, coupled with visualization techniques, ensures a comprehensive and accurate analysis.
 
-### c. Final state
+#### c. Final state
 ```{r filter_data_for_relevant_trips}
 #add average speed
 posmo_train_related <- posmo_train_related |> mutate(tripspeed = distance/total_time) |>
@@ -497,7 +506,7 @@ combined_boxplot(data = posmo_train_related_filtered, value_columns = c("distanc
 ```
 
 
-## **Methods**
+## Methods
 
 The following methods will be applied in this study:
 
@@ -511,11 +520,11 @@ The following methods will be applied in this study:
 
 5.  **User Profiling:** We will segment users based on their transportation mode and travel patterns. Creating these profiles could provide insights into different types of users or behaviors, and allow us to tailor interventions or recommendations to specific user groups.
 
-## **Results**
+## Results
 
 In this section, we will present our findings from the statistical and geospatial analyses. We will provide clear and concise visualizations to illustrate patterns and trends in the data, such as the distribution of different modes of transportation, the distances traveled by different modes of transportation, and the temporal variations in these variables.
 
-## **Discussion**
+## Discussion
 
 The findings of this study contribute to our understanding of how distance to the nearest train station impacts transport mode choices and the effectiveness of statistical methods in analysing this relationship. It is important to acknowledge that the conclusions drawn from this study are based on a small sample size consisting solely of students in this module, which may introduce limitations and potential biases. Nonetheless, the research questions can be addressed as follows:
 
