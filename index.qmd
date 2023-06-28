@@ -583,6 +583,46 @@ plot(Effect("distance",fit),style="stacked")
 
 ```
 
+#### Direct distance 
+
+```{r}
+# Fit multinomial logistic regression model
+fit <- multinom(transport_mode ~ direct_distance, data = posmo_train_related_filtered, reflevel = "Walk")
+
+# Specify the distance values for which you want to calculate the predicted probabilities
+distance_values <- seq(0,5000,100)
+
+# Create a dataframe with the distance values
+new_data <- data.frame(direct_distance = distance_values)
+
+# Calculate the predicted probabilities for the different transport modes at the specified distance values
+predicted_probs <- predict(fit, newdata = new_data, type = "probs")
+
+# Combine the distance values and predicted probabilities into a single dataframe
+result <- data.frame(total_time_value = distance_values, predicted_probs)
+
+
+
+# Create the plot
+plot <- ggplot(result, aes(x = total_time_value)) +
+    geom_line(aes(y = Walk, color = "Walk"), linetype = "dashed") +
+    geom_line(aes(y = Bike, color = "Bike")) +
+    geom_line(aes(y = Bus, color = "Bus")) +
+    geom_line(aes(y = Car, color = "Car")) +
+    geom_line(aes(y = Tram, color = "Tram")) +
+    scale_color_manual(values = c("Walk" = "black", "Bike" = "blue", "Bus" = "green", "Car" = "red", "Tram" = "orange")) +
+    geom_hline(yintercept = c(0.5, 0.25), linetype = "dotted", color = "gray",linewidth = 1.1)+
+    labs(x = "Distance", y = "Probability") +
+    theme_minimal()
+
+# Add legends for the transport modes
+plot <- plot + labs(color = "Transport Mode")
+
+# Display the plot
+plot
+```
+
+
 #### Time
 
 The same analysis was conducted for the time measure. The resulting probabilities represent the likelihood of choosing a specific transport mode based on the total time values. The multinomial logistic regression model was fitted using the "total_time" variable as the predictor and the transport mode as the outcome variable, with the "Walk" mode as the reference level.
