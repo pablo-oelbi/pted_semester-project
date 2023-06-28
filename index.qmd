@@ -432,7 +432,7 @@ summary_table <- gt(summary_df) %>%
   )
 
 # Print the table
-print(summary_table)
+summary_table
 
 ```
 
@@ -490,7 +490,7 @@ posmo_train_related_filtered <- bind_rows(df_walk, df_car, df_bike, df_bus, df_t
 
 ```
 
-After all transformation, we receive a very promising data set: 
+After all transformation, we arrive with a total of 205 different trips for the analysis.
 
 ```{r}
 combined_boxplot(data = posmo_train_related_filtered, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = FALSE)
