@@ -529,6 +529,30 @@ The Shapiro-Wilk test was used to test for normality in each measure across the 
 
 We also examined the homogeneity of variances using Levene's test, which is crucial for certain statistical methods like the traditional ANOVA. The test results are summarized in the table below:
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+# test for normality
+measures <- c("distance", "total_time", "direct_distance")
+transport_modes <- unique(posmo_train_related_filtered$transport_mode)
+
+for (measure in measures){
+  for (transport_mode in transport_modes){
+    print(paste("Shapiro-Wilk test for ", measure, " and transport mode ", transport_mode))
+    print(shapiro.test(posmo_train_related_filtered[[measure]][posmo_train_related_filtered$transport_mode==transport_mode]))
+  }
+}
+
+# Define the measures
+measures <- c("distance", "total_time", "direct_distance")
+
+# Loop over all measures
+for (measure in measures) {
+  print(paste("Levene's Test for", measure))
+  print(car::leveneTest(as.formula(paste(measure, "~ transport_mode")), data = posmo_train_related_filtered))
+}
+
+```
+
+
 | Measure         | p-value   |
 |-----------------|-----------|
 | distance        | 4.134e-06 |
@@ -547,6 +571,21 @@ The results of the Games-Howell post-hoc test showed significant differences in 
 | Bus vs Walk (distance)  | -1715.39 | 4.30e-09 |
 | Car vs Walk (distance)  | -2175.52 | 1.60e-10 |
 | Tram vs Walk (distance) | -1480.46 | 2.34e-05 |
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}}
+# Import the rstatix package
+library(rstatix)
+
+# Perform Games-Howell post-hoc test for distance
+games_howell_test(posmo_train_related_filtered, distance ~ transport_mode)
+
+# Perform Games-Howell post-hoc test for total_time
+games_howell_test(posmo_train_related_filtered, total_time ~ transport_mode)
+
+# Perform Games-Howell post-hoc test for direct_distance
+games_howell_test(posmo_train_related_filtered, direct_distance ~ transport_mode)
+
+```
 
 These results indicate that for distance, Bike, Bus, Car, and Tram all had significantly more distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average.
 

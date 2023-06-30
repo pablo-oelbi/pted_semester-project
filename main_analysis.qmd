@@ -20,6 +20,7 @@ library(purrr)
 library(cowplot)
 library(rnaturalearth)
 library(rnaturalearthdata)
+
 ```
 
 
@@ -534,7 +535,7 @@ posmo_train_related <- bind_rows(tram_data, other_data)
 ```{r}
 create_boxplot(data = posmo_train_related, value_column = "distance", remove_outliers = FALSE)
 create_boxplot(data = posmo_train_related, value_column = "total_time", remove_outliers = FALSE)
-combined_boxplot(data = posmo_train_related, value_columns = c("distance", "total_time"), remove_outliers = FALSE)
+combined_boxplot(data = posmo_train_related_filtered, value_columns = c("distance", "total_time"), remove_outliers = FALSE)
 ```
 
 ```{r}
@@ -674,11 +675,11 @@ print(model)
 install.packages("nnet")
 library(nnet)
 # Convert 'transport_mode' to a factor
-posmo_train_related$transport_mode <- as.factor(posmo_train_related$transport_mode)
+posmo_train_related_filtered$transport_mode <- as.factor(posmo_train_related_filtered$transport_mode)
 
 
 # Fit the model
-model <- nnet(transport_mode ~ distance + total_time, data = posmo_train_related, size = 10, rang = 0.1, decay = 5e-4, maxit = 200)
+model <- nnet(transport_mode ~ distance + total_time, data = posmo_train_related_filtered, size = 10, rang = 0.1, decay = 5e-4, maxit = 200)
 
 # Print the model
 print(model)
@@ -699,21 +700,303 @@ print(predictions)
 
 ```
 
+Assumption of Independence: The observations within each sample must be independent. That means the presence or value of one observation does not influence the presence or value of another observation. In your case, this means different trips by the same user should not influence each other.
+
+Assumption of Normality: The dependent variable (in this case, distance, total_time, and direct_distance) should be approximately normally distributed for each group of the independent variable (transport_mode). This can be tested with a Shapiro-Wilk test for normality, which tests the null hypothesis that the data was drawn from a normal distribution.
+
+Assumption of Homogeneity of Variances: The variances of the dependent variable should be equal across groups. This can be tested with Levene's test or Bartlett's test, which test the null hypothesis that the variances are equal across groups.
+
+
+
+```{r distance}
+# test for normality
+measures <- c("distance", "total_time", "direct_distance")
+transport_modes <- unique(posmo_train_related_filtered$transport_mode)
+
+for (measure in measures){
+  for (transport_mode in transport_modes){
+    print(paste("Shapiro-Wilk test for ", measure, " and transport mode ", transport_mode))
+    print(shapiro.test(posmo_train_related_filtered[[measure]][posmo_train_related_filtered$transport_mode==transport_mode]))
+  }
+}
+
+# Define the measures
+measures <- c("distance", "total_time", "direct_distance")
+
+# Loop over all measures
+for (measure in measures) {
+  print(paste("Levene's Test for", measure))
+  print(car::leveneTest(as.formula(paste(measure, "~ transport_mode")), data = posmo_train_related_filtered))
+}
 
 
 
 
+```
+
+```{r direct_distance}
+# test for normality
+measures <- c("distance", "total_time", "direct_distance")
+transport_modes <- unique(posmo_train_related_filtered$transport_mode)
+
+for (measure in measures){
+  for (transport_mode in transport_modes){
+    print(paste("Shapiro-Wilk test for ", measure, " and transport mode ", transport_mode))
+    print(shapiro.test(posmo_train_related_filtered[[measure]][posmo_train_related_filtered$transport_mode==transport_mode]))
+  }
+}
+
+# Define the measures
+measures <- c("distance", "total_time", "direct_distance")
+
+# Loop over all measures
+for (measure in measures) {
+  print(paste("Levene's Test for", measure))
+  print(car::leveneTest(as.formula(paste(measure, "~ transport_mode")), data = posmo_train_related_filtered))
+}
+
+```
+
+
+Levene's test is used to assess the homogeneity of variance assumption - whether the variances are equal across the groups. The null hypothesis is that the variances are equal across all groups.
+
+Interpretations for the results:
+
+Distance: The p-value is 4.134e-06, which is less than 0.05. This means that there is a statistically significant difference in the variances of the distance variable across the different transport_mode groups. In other words, the assumption of homogeneity of variance is violated for distance.
+
+Total Time: The p-value is 0.191, which is greater than 0.05. This means that there is not a statistically significant difference in the variances of the total_time variable across the different transport_mode groups. In other words, the assumption of homogeneity of variance is met for total_time.
+
+Direct Distance: The p-value is 7.783e-08, which is less than 0.05. This means that there is a statistically significant difference in the variances of the direct_distance variable across the different transport_mode groups. In other words, the assumption of homogeneity of variance is violated for direct_distance.
+
+The violation of the homogeneity of variance assumption for distance and direct_distance suggests that you should be cautious when interpreting results of analyses that assume equal variances (like ANOVA or t-tests) for these variables. We will use a statistical test that does not assume equal variances, such as the Welch ANOVA test.
+
+```{r}
+# Perform Welch's ANOVA for distance
+oneway.test(distance ~ transport_mode, data = posmo_train_related_filtered, var.equal = FALSE)
+
+# Perform Welch's ANOVA for total_time
+oneway.test(total_time ~ transport_mode, data = posmo_train_related_filtered, var.equal = FALSE)
+
+# Perform Welch's ANOVA for direct_distance
+oneway.test(direct_distance ~ transport_mode, data = posmo_train_related_filtered, var.equal = FALSE)
+
+```
+
+```{r}
+# Perform an ANOVA for total_time
+anova_result <- aov(total_time ~ transport_mode, data = posmo_train_related_filtered)
+summary(anova_result)
+
+# Perform pairwise t-tests for total_time
+pairwise.t.test(posmo_train_related_filtered$total_time, posmo_train_related_filtered$transport_mode,
+                p.adjust.method = "BH")  # adjust for multiple comparisons
+
+```
+
+
+The output you provided first reports the results from an Analysis of Variance (ANOVA) test performed on the total_time variable grouped by transport_mode. The F-value of 3.282 with a p-value of 0.0124 suggests that there are significant differences in the means of total_time among the different transport_mode groups at a significance level of 0.05.
+
+Following the ANOVA test, pairwise t-tests were conducted to do multiple comparisons between the means of total_time for each pair of transport_mode groups. The p-values from these tests were adjusted using the Benjamini-Hochberg (BH) method to control the false discovery rate due to multiple testing.
+
+The table provided shows the adjusted p-values for each pairwise comparison. For example, the p-value for the comparison between Bike and Bus is 0.269, between Bike and Car is 0.076, and so on.
+
+Significantly low p-values (usually less than 0.05) would suggest that the difference in means between the two groups is statistically significant. From the results, we can see that the difference in total_time between the Bike and Walk transport modes is statistically significant (p-value = 0.013).
+
+For the other comparisons, the p-values are not less than 0.05, which suggests that the differences in total_time between those pairs of transport modes are not statistically significant at the 0.05 significance level.
+
+
+```{r}
+# Import the rstatix package
+library(rstatix)
+
+# Perform Games-Howell post-hoc test for distance
+games_howell_test(posmo_train_related_filtered, distance ~ transport_mode)
+
+# Perform Games-Howell post-hoc test for total_time
+games_howell_test(posmo_train_related_filtered, total_time ~ transport_mode)
+
+# Perform Games-Howell post-hoc test for direct_distance
+games_howell_test(posmo_train_related_filtered, direct_distance ~ transport_mode)
+
+```
+
+The difference in distance between Bike and Walk transport modes is statistically significant (p-value = 0.01), with Walk having on average 2209.52 units less distance than Bike.
+The difference in distance between Bus and Walk transport modes is statistically significant (p-value < 0.001), with Walk having on average 2388.79 units less distance than Bus.
+The difference in distance between Car and Walk transport modes is statistically significant (p-value < 0.001), with Walk having on average 2558.39 units less distance than Car.
+The difference in distance between Tram and Walk transport modes is statistically significant (p-value < 0.001), with Walk having on average 1956.63 units less distance than Tram.
+The other pairwise comparisons do not show statistically significant differences in distance at the 0.05 significance level.
+
+Statistically significant results from the pairwise comparisons for the direct distance:
+
+- The difference in `direct_distance` between Bike and Walk transport modes is statistically significant (p-value = 0.019), with Walk having on average 1795.35 units more direct distance than Bike.
+- The difference in `direct_distance` between Bus and Walk transport modes is statistically significant (p-value < 0.001), with Walk having on average 1715.39 units more direct distance than Bus.
+- The difference in `direct_distance` between Car and Walk transport modes is statistically significant (p-value < 0.001), with Walk having on average 2175.52 units more direct distance than Car.
+- The difference in `direct_distance` between Tram and Walk transport modes is statistically significant (p-value < 0.001), with Walk having on average 1480.46 units more direct distance than Tram.
 
 
 
+```{r}
+library(nnet)
+library(effects)
+posmo_train_related_filtered$transport_mode <- as.factor(posmo_train_related_filtered$transport_mode)
+posmo_train_related_filtered$transport_mode <- relevel(posmo_train_related_filtered$transport_mode, ref = "Walk")
+# Fit multinomial logistic regression model
+fit <- multinom(transport_mode ~ distance, data = posmo_train_related_filtered, reflevel = "Walk")
 
 
 
+# View model summary
+summary(fit)
+
+plot(Effect("distance",fit),style="stacked")
+
+```
+
+```{r}
+library(ggplot2)
+
+# Simulating probabilities based on distance
+sim_data <- data.frame(distance = seq(0, 500, by = 10))
+
+# Predicting probabilities for each transport mode
+sim_data$prob_bus <- predict(fit, newdata = sim_data, type = "probs", keep = "Bus")
+sim_data$prob_car <- predict(fit, newdata = sim_data, type = "probs", keep = "Car")
+sim_data$prob_tram <- predict(fit, newdata = sim_data, type = "probs", keep = "Tram")
+sim_data$prob_walk <- predict(fit, newdata = sim_data, type = "probs", keep = "Walk")
+
+# Reshaping data for plotting
+sim_data_long <- tidyr::gather(sim_data, key = "Transport_Mode", value = "Probability", starts_with("prob_"))
+
+# Creating the plot
+ggplot(sim_data_long, aes(x = distance, y = Probability, color = Transport_Mode)) +
+  geom_line() +
+  labs(x = "Distance", y = "Probability", color = "Transport Mode") +
+  theme_minimal()
+
+```
+
+```{r}
+# Fit multinomial logistic regression model
+fit <- multinom(transport_mode ~ distance, data = posmo_train_related_filtered, reflevel = "Walk")
+
+# Specify the distance values for which you want to calculate the predicted probabilities
+distance_values <- seq(0,3500,100)
+
+# Create a dataframe with the distance values
+new_data <- data.frame(distance = distance_values)
+
+# Calculate the predicted probabilities for the different transport modes at the specified distance values
+predicted_probs <- predict(fit, newdata = new_data, type = "probs")
+
+# Combine the distance values and predicted probabilities into a single dataframe
+result <- data.frame(distance = distance_values, predicted_probs)
+
+# Print the result
+result
+
+```
+
+# regression for time
+
+```{r}
+library(nnet)
+library(effects)
+posmo_train_related_filtered$transport_mode <- as.factor(posmo_train_related_filtered$transport_mode)
+posmo_train_related_filtered$transport_mode <- relevel(posmo_train_related_filtered$transport_mode, ref = "Walk")
+# Fit multinomial logistic regression model
+fit <- multinom(transport_mode ~ total_time, data = posmo_train_related_filtered, reflevel = "Walk")
 
 
 
+# View model summary
+summary(fit)
+
+plot(Effect("total_time",fit),style="stacked")
+
+```
+
+```{r}
+# Fit multinomial logistic regression model
+fit <- multinom(transport_mode ~ total_time, data = posmo_train_related_filtered, reflevel = "Walk")
+
+# Specify the distance values for which you want to calculate the predicted probabilities
+distance_values <- seq(10,60,10)
+
+# Create a dataframe with the distance values
+new_data <- data.frame(total_time = distance_values)
+
+# Calculate the predicted probabilities for the different transport modes at the specified distance values
+predicted_probs <- predict(fit, newdata = new_data, type = "probs")
+
+# Combine the distance values and predicted probabilities into a single dataframe
+result <- data.frame(total_time_value = distance_values, predicted_probs)
+
+# Print the result
+result
+
+```
+
+# regression for direct distance
+
+```{r}
+library(nnet)
+library(effects)
+posmo_train_related_filtered$transport_mode <- as.factor(posmo_train_related_filtered$transport_mode)
+posmo_train_related_filtered$transport_mode <- relevel(posmo_train_related_filtered$transport_mode, ref = "Walk")
+# Fit multinomial logistic regression model
+fit <- multinom(transport_mode ~ direct_distance , data = posmo_train_related_filtered, reflevel = "Walk")
 
 
+
+# View model summary
+summary(fit)
+
+plot(Effect("direct_distance",fit),style="stacked")
+
+```
+
+
+```{r}
+# Fit multinomial logistic regression model
+fit <- multinom(transport_mode ~ direct_distance, data = posmo_train_related_filtered, reflevel = "Walk")
+
+# Specify the distance values for which you want to calculate the predicted probabilities
+distance_values <- seq(0,5000,100)
+
+# Create a dataframe with the distance values
+new_data <- data.frame(direct_distance = distance_values)
+
+# Calculate the predicted probabilities for the different transport modes at the specified distance values
+predicted_probs <- predict(fit, newdata = new_data, type = "probs")
+
+# Combine the distance values and predicted probabilities into a single dataframe
+result <- data.frame(total_time_value = distance_values, predicted_probs)
+
+# Print the result
+result
+
+```
+
+
+```{r}
+# Create the plot
+plot <- ggplot(result, aes(x = total_time_value)) +
+    geom_line(aes(y = Walk, color = "Walk"), linetype = "dashed") +
+    geom_line(aes(y = Bike, color = "Bike")) +
+    geom_line(aes(y = Bus, color = "Bus")) +
+    geom_line(aes(y = Car, color = "Car")) +
+    geom_line(aes(y = Tram, color = "Tram")) +
+    scale_color_manual(values = c("Walk" = "black", "Bike" = "blue", "Bus" = "green", "Car" = "red", "Tram" = "orange")) +
+    geom_hline(yintercept = c(0.5, 0.25), linetype = "dotted", color = "gray",linewidth = 1.1)+
+    labs(x = "Distance", y = "Probability") +
+    theme_minimal()
+
+# Add legends for the transport modes
+plot <- plot + labs(color = "Transport Mode")
+
+# Display the plot
+plot
+```
 
 
 
