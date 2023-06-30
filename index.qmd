@@ -587,7 +587,7 @@ games_howell_test(posmo_train_related_filtered, direct_distance ~ transport_mode
 
 ```
 
-These results indicate that for distance, Bike, Bus, Car, and Tram all had significantly more distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average.
+These results indicate that for distance, Bike, Bus, Car, and Tram all had significantly more distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average. This pattern is similarly observed when assessing the direct distance. However, when it comes to time, the data aligns with the chart's depiction, demonstrating that the mean times across the different modes of transport do not show significant differences.
 
 ### Regression analysis
 
