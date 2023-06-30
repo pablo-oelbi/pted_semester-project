@@ -529,7 +529,7 @@ The Shapiro-Wilk test was used to test for normality in each measure across the 
 
 We also examined the homogeneity of variances using Levene's test, which is crucial for certain statistical methods like the traditional ANOVA. The test results are summarized in the table below:
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
+```{r Shapiro-Wil, echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
 # test for normality
 measures <- c("distance", "total_time", "direct_distance")
 transport_modes <- unique(posmo_train_related_filtered$transport_mode)
@@ -572,7 +572,7 @@ The results of the Games-Howell post-hoc test showed significant differences in 
 | Car vs Walk (distance)  | -2175.52 | 1.60e-10 |
 | Tram vs Walk (distance) | -1480.46 | 2.34e-05 |
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}}
+```{r, echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
 # Import the rstatix package
 library(rstatix)
 
@@ -587,7 +587,7 @@ games_howell_test(posmo_train_related_filtered, direct_distance ~ transport_mode
 
 ```
 
-These results indicate that for distance, Bike, Bus, Car, and Tram all had significantly more distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average.
+These results indicate that for distance, Bike, Bus, Car, and Tram all had significantly more distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average. This pattern is similarly observed when assessing the direct distance. However, when it comes to time, the data aligns with the chart's depiction, demonstrating that the mean times across the different modes of transport do not show significant differences.
 
 ### Regression analysis
 
