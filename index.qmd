@@ -17,7 +17,7 @@ message: false
 <!-- You can add  your R Code with Code chunks-->
 
 ```{r}
-#| echo: false
+#| echo: true
 #| warning: false
 #| message: false
 
@@ -30,6 +30,7 @@ message: false
 
 # To apply the setting for all code chunks, add the options to the yaml header of the document (in between the ---) without the preceeding "#|".
 
+# Loading all needed libraries 
 knitr::opts_chunk$set(echo = TRUE)
 library(readr)
 library(dplyr)
@@ -49,7 +50,8 @@ library(rnaturalearthdata)
 
 ```
 
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=TRUE, warning=FALSE}
+# Write all needed functions
 # Function to get trips for a single user
 get_trips <- function(df) {
   df <- df %>%
@@ -221,9 +223,9 @@ To address these objectives and shed light on the relationship between distance 
 1.  How does the distance to the nearest train station influence individuals' transport mode preferences?
 2.  Can statistical methods, such as t-tests, regression analysis, and clustering techniques, effectively analyze the relationship between distance and transport mode choice, and provide valuable insights?
 3.  How does the choice of distance measurement method influence the analysis of the relationship between distance and transport mode?
-4.  What are the effective ways to categorize transportation modes to analyze their relationship with distance?
 
-## Data Description
+
+## Data and Methods
 
 ### Dataset
 
@@ -239,7 +241,13 @@ The data comprises GPS trajectory data that was collected from nine individuals 
 
 -   **`lon_x`** and **`lat_y`**: The longitude and latitude of each recorded location.(dbl)
 
-```{r data_loading}
+
+
+### Data preparation
+
+The process of data cleansing, a key element in any research project, is optimized using well-defined steps. Initially, data from CSV files are compiled into a combined data frame. Subsequently, the data sets are converted into appropriate data types to ensure consistency with the following steps of the analysis. The transport mode column is modified to combine similar types like 'Run' and 'Walk'. This step helps to increase the intensity of subsequent analyses. This is followed by a rigorous data cleaning process to detect and delete any instances of NA values or empty strings, ensuring data integrity and completeness. A summary of the cleand data is shown in the table below.
+
+```{r data_loading, results='hide'}
 # List all CSV files in the directory
 file_list <- list.files(path = "data", pattern = "*.csv", full.names = TRUE)
 
@@ -326,10 +334,6 @@ summary_table |> as_raw_html()
 
 ```
 
-### Data preparation
-
-The process of data cleansing, a key element in any research project, is optimized using well-defined steps. Initially, data from CSV files are compiled into a combined data frame. Subsequently, the data sets are converted into appropriate data types to ensure consistency with the following steps of the analysis. The transport mode column is modified to combine similar types like 'Run' and 'Walk'. This step helps to increase the intensity of subsequent analyses. This is followed by a rigorous data cleaning process to detect and delete any instances of NA values or empty strings, ensuring data integrity and completeness.
-
 Once the initial data cleaning is completed, the data cycle is further enhanced with analytical metrics. A unique identifier 'trip_id' is calculated for each particular trip, it provides a systematic way of classifying and analysing data. Subsequently, the data are grouped according to each trip, and then two measures of distance (in meters) and elapsed time (in minutes) are calculated for each trip. Lastly, the data set is filtered to store only trips that occur immediately before or after a train trip. This strategic selection of data lays the foundation for answering the research questions, focusing on the patterns associated with the mode of transportation before starting a train trip.
 
 In the end, we have the following data structure:
@@ -351,6 +355,8 @@ In the end, we have the following data structure:
 -   **`total_time`**: The total time taken by the participant to complete a particular trip. This measurement is derived from the collected location data and corresponds to the `distance` covered in the same trip. (num)
 
 -   **`direct_distance`**: The shortest possible distance between the starting and ending point of a trip. This measurement is calculated using the 'as the crow flies' method, which ignores any detours or turns taken during the trip. (num)
+
+A summary of the enhanced data is shown in the table below.
 
 ```{r}
 # Remove duplicated rows, split the data frame by user_id, apply the get_trips function to each group, and bind the results into a single data frame posmo_enriched.
@@ -505,32 +511,27 @@ After all transformation, we receive a very promising data set:
 combined_boxplot(data = posmo_train_related_filtered, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = FALSE)
 ```
 
-## Methods
+### Statistical Methods and Limitations
 
-The following methods will be applied in this study:
+This study employed statistical analyses and regression modeling to examine the relationship between distance, time, and preferred transport modes. Three measures (distance, total time, and direct distance) were assessed across five modes of transport (Walk, Bike, Bus, Car, and Tram).
 
-1.  **Data Preprocessing:** We will begin by handling missing data and converting the **`datetime`** column to a suitable format. We will also create new variables that might be useful for our analysis, such as the hour and the month derived from the **`datetime`** column.
+To compare differences in measures, statistical tests were chosen after checking assumptions of normality and homogeneity of variances. The Shapiro-Wilk test [@shapiro1965] was used to test for normality in each measure across the different modes of transport. To examine the homogeneity of variances Levene's test [@levene1960] was used. This test is crucial for certain statistical methods like the traditional ANOVA.
 
-2.  **Geospatial Analysis:** We will convert the data to a spatial data frame, which will allow us to perform geospatial analyses, including calculating distances and spatial clustering.
+Since data violated assumptions, Welch's ANOVA [@welch1951] was used, followed by the Games-Howell post-hoc test [@games1976] for pairwise comparisons.
 
-3.  **Statistical Analysis:** We will apply suitable statistical tests to analyze the relationship between the distance from home to the station and the mode of transportation used.
+Regression analysis utilized multinomial logistic regression models to estimate probabilities of choosing modes based on varying distances and total time values. Distance and time calculations were based on participants' trajectory data, using precise coordinates and timestamps.
 
-4.  **Time-series Analysis:** Considering the timestamp data, we will explore it as a time-series to uncover patterns of movement or transportation usage over various periods (daily, weekly, monthly, etc.). This will help us understand and predict changes in the user's transportation habits.
-
-5.  **User Profiling:** We will segment users based on their transportation mode and travel patterns. Creating these profiles could provide insights into different types of users or behaviors, and allow us to tailor interventions or recommendations to specific user groups.
+It's important to note the small sample size limited generalizability, and biases may exist as the data only represents students in a specific module. However, these methods provided valuable insights into the relationship between distance, time, and transport mode preferences within this context.
 
 ## Results
 
 ### Statistical test to see if the mean values are different
 
-The purpose of our analysis was to statistically investigate differences in three measures (distance, total_time, and direct_distance) across five modes of transport (Walk, Car, Bike, Bus, Tram). In order to choose an appropriate test for comparing these groups, we first checked the assumptions of normality and homogeneity of variances.
+#### Shapiro-Wilk and Levene's test
+The results of the Shapiro-Wilk test showed significant deviation from normality (p \< 0.05) for all combinations of measures and transport modes. This suggests that the data for these groups do not follow a normal distribution.
 
-The Shapiro-Wilk test was used to test for normality in each measure across the different modes of transport. The results showed significant deviation from normality (p \< 0.05) for all combinations of measures and transport modes. This suggests that the data for these groups do not follow a normal distribution.
-
-We also examined the homogeneity of variances using Levene's test, which is crucial for certain statistical methods like the traditional ANOVA. The test results are summarized in the table below:
-
-```{r, echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}
-# test for normality
+```{r, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+# Shapiro-Wilk test for normality
 measures <- c("distance", "total_time", "direct_distance")
 transport_modes <- unique(posmo_train_related_filtered$transport_mode)
 
@@ -540,18 +541,9 @@ for (measure in measures){
     print(shapiro.test(posmo_train_related_filtered[[measure]][posmo_train_related_filtered$transport_mode==transport_mode]))
   }
 }
-
-# Define the measures
-measures <- c("distance", "total_time", "direct_distance")
-
-# Loop over all measures
-for (measure in measures) {
-  print(paste("Levene's Test for", measure))
-  print(car::leveneTest(as.formula(paste(measure, "~ transport_mode")), data = posmo_train_related_filtered))
-}
-
 ```
 
+The results of the Levene's test show significant deviation from the assumption of equal variances for 'distance' and 'direct_distance' (p \< 0.05), while 'total_time' did not significantly deviate from this assumption (see Table below).
 
 | Measure         | p-value   |
 |-----------------|-----------|
@@ -559,7 +551,15 @@ for (measure in measures) {
 | total_time      | 0.191     |
 | direct_distance | 7.783e-08 |
 
-The results of the Levene's test show significant deviation from the assumption of equal variances for 'distance' and 'direct_distance' (p \< 0.05), while 'total_time' did not significantly deviate from this assumption.
+```{r, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+# Levene's test for homogeneity of variances
+measures <- c("distance", "total_time", "direct_distance") # Define the measures
+
+for (measure in measures) {
+  print(paste("Levene's Test for", measure))
+  print(car::leveneTest(as.formula(paste(measure, "~ transport_mode")), data = posmo_train_related_filtered))
+} # Loop over all measures
+```
 
 Given the violations of normality and homogeneity of variances for some of the measures, we performed Welch's ANOVA, which does not require these assumptions, followed by the Games-Howell post-hoc test for pairwise comparisons.
 
@@ -572,7 +572,16 @@ The results of the Games-Howell post-hoc test showed significant differences in 
 | Car vs Walk (distance)  | -2175.52 | 1.60e-10 |
 | Tram vs Walk (distance) | -1480.46 | 2.34e-05 |
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, eval=FALSE}}
+```{r, echo=TRUE, message=FALSE, warning=FALSE, eval=FALSE}
+# Perform Welch's ANOVA for distance
+oneway.test(distance ~ transport_mode, data = posmo_train_related_filtered, var.equal = FALSE)
+
+# Perform Welch's ANOVA for total_time
+oneway.test(total_time ~ transport_mode, data = posmo_train_related_filtered, var.equal = FALSE)
+
+# Perform Welch's ANOVA for direct_distance
+oneway.test(direct_distance ~ transport_mode, data = posmo_train_related_filtered, var.equal = FALSE)
+
 # Import the rstatix package
 library(rstatix)
 
@@ -584,7 +593,6 @@ games_howell_test(posmo_train_related_filtered, total_time ~ transport_mode)
 
 # Perform Games-Howell post-hoc test for direct_distance
 games_howell_test(posmo_train_related_filtered, direct_distance ~ transport_mode)
-
 ```
 
 These results indicate that for distance, Bike, Bus, Car, and Tram all had significantly more distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average. This pattern is similarly observed when assessing the direct distance. However, when it comes to time, the data aligns with the chart's depiction, demonstrating that the mean times across the different modes of transport do not show significant differences.
@@ -595,13 +603,13 @@ These results indicate that for distance, Bike, Bus, Car, and Tram all had signi
 
 The analysis conducted using multinomial logistic regression revealed interesting insights into the relationship between distance and individuals' preferred transport modes. The probabilities of choosing different modes (Walk, Bike, Bus, Car, and Tram) were examined based on varying distances.
 
-The probability of choosing Walk decreased significantly as the distance to the train station increased. At shorter distances (e.g., 24 meters), the probability of selecting Walk was high, with approximately 92.7% likelihood and stays over 50% till 1150 meters where it is dropping below. That means that every second individual is chosing a different transport mode then walking when the train station is away more then 1150 meters. On 1700 meters just every fifth individual is chosing to go by walk. Starting from 2100 meters the probability drops to less then 10%.
+The probability of choosing Walk decreased significantly as the distance to the train station increased. At shorter distances (e.g., 24 meters), the probability of selecting Walk was high, with approximately 92.7% likelihood and stays over 50% untill 1150 meters where it is dropping below. That means that every second individual is chosing a different transport mode than walking when the train station is away more then 1150 meters. On 1700 meters, just every fifth individual is choosing to go by walk. Starting from 2100 meters, the probability drops to less than 10%.
 
-Overall, as the distance increased to 2500 meters and longer, the probability diminished to an small value, indicating a strong aversion to walking longer distances.
+Overall, as the distance increased to 2500 meters and longer, the probability diminished to a small value, indicating a strong aversion to walking longer distances.
 
-As the distance increases, the probability of choosing the "Bike" mode also increases. The probabilities start at 1.38% and gradually rise until they reaches it's maximum at 18.55%. This indicates that as the distance to the destination increases, there is a higher likelihood of choosing the "Bike" mode as the preferred transport mode.
+As the distance increases, the probability of choosing the "Bike" mode also increases. The probabilities start at 1.38% and gradually rise until they reache it's maximum at 18.55%. This indicates that as the distance to the destination increases, there is a higher likelihood of choosing the "Bike" mode as the preferred transport mode.
 
-Similar patterns were observed for Bus, Car, and Tram. The probabilities of choosing these modes increases as the distance increased. Each mode exhibited distinct probabilities at various distances, signifying the nuanced preferences of individuals.
+Similar patterns were observed for Bus, Car, and Tram. The probabilities of choosing these modes increases as the distance increases. Each mode exhibited distinct probabilities at various distances, signifying the nuanced preferences of individuals.
 
 These findings shed light on the relationship between distance and transport mode preferences. They highlight the decreased likelihood of selecting Walk as distances increase, while also emphasizing the varied preferences for Bike, Bus, Car, and Tram based on distance. Importantly, these probabilities are specific to the examined dataset and should be interpreted within the context of the broader study.
 
@@ -622,7 +630,7 @@ plot(Effect("distance",fit),style="stacked")
 
 ```
 
-#### Direct distance 
+#### Direct distance
 
 ```{r}
 # Fit multinomial logistic regression model
@@ -661,23 +669,20 @@ plot <- plot + labs(color = "Transport Mode")
 plot
 ```
 
-
 #### Time
 
 The same analysis was conducted for the time measure. The resulting probabilities represent the likelihood of choosing a specific transport mode based on the total time values. The multinomial logistic regression model was fitted using the "total_time" variable as the predictor and the transport mode as the outcome variable, with the "Walk" mode as the reference level.
 
+| total_time_value | Walk   | Bike  | Bus   | Car   | Tram  |
+|------------------|--------|-------|-------|-------|-------|
+| 10               | 44.7%  | 9.2%  | 18.4% | 16.7% | 11.1% |
+| 20               | -10.5% | +5.4% | +4.6% | -1.6% | +2.0% |
+| 30               | -9.9%  | +7.1% | +3.8% | -2.4% | +1.4% |
+| 40               | -8.2%  | +8.2% | +2.3% | -3.4% | +0.4% |
+| 50               | -6.1%  | +8.9% | +0.5% | -2.6% | -0.6% |
+| 60               | -4.1%  | +8.7% | -1.1% | -2.2% | -1.3% |
 
-| total_time_value | Walk  | Bike | Bus   | Car   | Tram  |
-|------------------|-------|------|-------|-------|-------|
-| 10              | 44.7% | 9.2%  | 18.4% | 16.7% | 11.1% |
-| 20               | -10.5%| +5.4%| +4.6% | -1.6% | +2.0% |
-| 30               | -9.9% | +7.1%| +3.8% | -2.4% | +1.4% |
-| 40               | -8.2% | +8.2%| +2.3% | -3.4% | +0.4% |
-| 50               | -6.1% | +8.9%| +0.5% | -2.6% | -0.6% |
-| 60               | -4.1% | +8.7%| -1.1% | -2.2% | -1.3% |
-
-
-For example, at a total time value of 10 minutes, the predicted probabilities suggest that individuals are most likely to choose walking with a probability of 45%, followed by using the "Bike" with 9.2%, taking the bus with 18.4%, taking the car with 16.7%, and using the Tram with 11.1 %.
+For example, at a total time value of 10 minutes, the predicted probabilities suggest that individuals are most likely to choose walking with a probability of 45%, followed by using the "Bike" with 9.2%, taking the bus with 18.4%, taking the car with 16.7%, and using the Tram with 11.1%.
 
 As the total time value increases, the predicted probabilities for going by walk decreases strongly. The probability of car decreases as well, but since we selected a dataset with rather short distances, it could be a bias in the dataset. Overall, the table indicates a shift in transport mode preferences as the total time spent on the trip increases.
 
