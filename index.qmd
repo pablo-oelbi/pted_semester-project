@@ -241,7 +241,7 @@ Second, we aim to examine the role of different distance measurement methods in 
 To address these objectives and shed light on the relationship between distance to the nearest train station and transport mode choices, the following research questions will guide our investigation:
 
 1.  How does the distance to the nearest train station influence individuals' transport mode preferences?
-2.  Can statistical methods, such as t-tests, regression analysis, and clustering techniques, effectively analyze the relationship between distance and transport mode choice, and provide valuable insights?
+2.  Can statistical methods, such as statistical tests and regression analysis effectively analyze the relationship between distance and transport mode choice, and provide valuable insights?
 3.  How does the choice of distance measurement method influence the analysis of the relationship between distance and transport mode?
 
 
@@ -537,6 +537,10 @@ create_boxplot(data = posmo_train_related_filtered, value_column =  "total_time"
 ### Statistical Methods and Limitations
 
 This study employed statistical analyses and regression modeling to examine the relationship between distance, time, and preferred transport modes. Three measures (distance, total time, and direct distance) were assessed across five modes of transport (Walk, Bike, Bus, Car, and Tram).
+
+- Distance: This measure refers to the total length of the travel path in meters.
+- Total Time: This measure represents the total time spent for the trip, from start to end, measured in minutes.
+- Direct Distance: This measure indicates the straight-line distance from the origin to the destination, disregarding any detours or route variations.
 
 To compare differences in measures, statistical tests were chosen after checking assumptions of normality and homogeneity of variances. The Shapiro-Wilk test [@shapiro1965] was used to test for normality in each measure across the different modes of transport. To examine the homogeneity of variances Levene's test [@levene1960] was used. This test is crucial for certain statistical methods like the traditional ANOVA.
 
