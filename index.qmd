@@ -594,9 +594,9 @@ The results for Welch's ANOVA tests are as follows:
 | Total Time       | 2.7365      | 4.000  | 69.250   | 0.03557   |
 | Direct Distance  | 51.228      | 4.000  | 54.141   | <2.2e-16  |
 
-The p-values for all three measures (distance, total time and direct distance) are below the threshold of 0.05. Given these results, we reject the null hypothesis of equal means across all transport modes for these measures. To further investigate the specific pairs of transport modes that have significantly different means, we proceeded with the Games-Howell post-hoc test. 
+The p-values for all three measures (distance, total time and direct distance) are below the threshold of 0.05. Given these results, we reject the null hypothesis of equal means across all transport modes for these measures. To further investigate the specific pairs of transport modes with significantly different means, we conducted the Games-Howell post-hoc test. 
 
-The results of the Games-Howell post-hoc test showed significant differences in some pairwise comparisons. Below are the statistically significant results:
+The results of the Games-Howell post-hoc test showed significant differences in pairwise comparisons. Below are the statistically significant results:
 
 | Comparison              | Estimate | p-value  |
 |-------------------------|----------|----------|
@@ -628,13 +628,13 @@ games_howell_test(posmo_train_related_filtered, total_time ~ transport_mode)
 games_howell_test(posmo_train_related_filtered, direct_distance ~ transport_mode)
 ```
 
-These results indicate that for distance, Bike, Bus, Car, and Tram all had significantly more distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average. This pattern is similarly observed when assessing the direct distance. However, when it comes to time, the data aligns with the chart's depiction, demonstrating that the mean times across the different modes of transport do not show significant differences.
+These results indicate that for the measure distance, Bike, Bus, Car, and Tram all had significantly higher average distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average. This pattern is similarly observed when assessing the direct distance. However, when it comes to time, the data aligns with the chart's depiction, demonstrating that the mean times across the different modes of transport do not show significant differences. 
 
 ### Regression analysis
 
 #### Distance
 
-The analysis conducted using multinomial logistic regression revealed interesting insights into the relationship between distance and individuals' preferred transport modes. The probabilities of choosing different modes (Walk, Bike, Bus, Car, and Tram) were examined based on varying distances.
+The analysis conducted using multinomial logistic regression revealed interesting insights into the relationship between distance and individuals' preferred transport modes. The probabilities of choosing different modes (Walk, Bike, Bus, Car, and Tram) were examined based on varying distances. The calculated Z-scores are fairly large, suggesting that the coefficients for each transport mode are significantly different from zero. This indicates that distance does have a significant effect on the choice of transport mode. The fit of the model seems to be reasonably good, based on the residual deviance and the AIC values.  
 
 The probability of choosing Walk decreased significantly as the distance to the train station increased. At shorter distances (e.g., 24 meters), the probability of selecting Walk was high, with approximately 92.7% likelihood and stays over 50% untill 1150 meters where it is dropping below. That means that every second individual is chosing a different transport mode than walking when the train station is away more then 1150 meters. On 1700 meters, just every fifth individual is choosing to go by walk. Starting from 2100 meters, the probability drops to less than 10%.
 
@@ -646,28 +646,95 @@ Similar patterns were observed for Bus, Car, and Tram. The probabilities of choo
 
 These findings shed light on the relationship between distance and transport mode preferences. They highlight the decreased likelihood of selecting Walk as distances increase, while also emphasizing the varied preferences for Bike, Bus, Car, and Tram based on distance. Importantly, these probabilities are specific to the examined dataset and should be interpreted within the context of the broader study.
 
-```{r regression}
+```{r regression, echo=FALSE}
 library(nnet)
 library(effects)
+library(knitr)
+library(broom)
+
 posmo_train_related_filtered$transport_mode <- as.factor(posmo_train_related_filtered$transport_mode)
 posmo_train_related_filtered$transport_mode <- relevel(posmo_train_related_filtered$transport_mode, ref = "Walk")
 # Fit multinomial logistic regression model
-fit <- multinom(transport_mode ~ distance, data = posmo_train_related_filtered, reflevel = "Walk")
+fit <- multinom(transport_mode ~ distance, data = posmo_train_related_filtered)
 
-
+z <- summary(fit)$coefficients/summary(fit)$standard.errors
 
 # View model summary
-summary(fit)
+#summary(fit)
 
-plot(Effect("distance",fit),style="stacked")
+
+# Get the tidy version of the model summary
+tidy_model_summary <- tidy(fit)
+
+# Print the tidy model summary
+#print(tidy_model_summary)
+
+
+# Create a nice-looking table
+kable(tidy_model_summary, digits = 5)
+#plot(Effect("distance",fit),style="stacked")
+
+# Specify the distance values for which you want to calculate the predicted probabilities
+distance_values <- seq(0,5000,100)
+
+# Create a dataframe with the distance values
+new_data <- data.frame(distance = distance_values)
+
+# Calculate the predicted probabilities for the different transport modes at the specified distance values
+predicted_probs <- predict(fit, newdata = new_data, type = "probs")
+
+# Combine the distance values and predicted probabilities into a single dataframe
+result <- data.frame(total_time_value = distance_values, predicted_probs)
+
+
+
+# Create the plot
+plot <- ggplot(result, aes(x = total_time_value)) +
+    geom_line(aes(y = Walk, color = "Walk"), linetype = "dashed") +
+    geom_line(aes(y = Bike, color = "Bike")) +
+    geom_line(aes(y = Bus, color = "Bus")) +
+    geom_line(aes(y = Car, color = "Car")) +
+    geom_line(aes(y = Tram, color = "Tram")) +
+    scale_color_manual(values = c("Walk" = "black", "Bike" = "blue", "Bus" = "green", "Car" = "red", "Tram" = "orange")) +
+    geom_hline(yintercept = c(0.5, 0.25), linetype = "dotted", color = "gray",linewidth = 1.1)+
+    labs(x = "Distance in meter", y = "Probability") +
+    theme_minimal()
+
+# Add legends for the transport modes
+plot <- plot + labs(color = "Transport Mode")
+
+# Display the plot
+plot
 
 ```
 
 #### Direct distance
 
-```{r}
-# Fit multinomial logistic regression model
-fit <- multinom(transport_mode ~ direct_distance, data = posmo_train_related_filtered, reflevel = "Walk")
+The analysis of the distance already revealed substantial insights, the same analysis with the direct distance to the train station and the selection of the transport mode shows even stronger effects and sensitivities. All results are compareable sifnificant as the effects of distance. 
+
+As the direct_distance to the train station increased, the probability of selecting Walk decreased more rapidly than with the original "distance" measure. For instance, at a direct_distance of 650 meters, less than 50% of individuals were observed to choose walking as their mode of transport. The influence of direct_distance became even more pronounced at greater distances. Around 950 meters, less than 20% or every fifth person opted to walk. This trend continued to the point where at approximately 1600 meters, only around 1% of individuals chose to walk.
+
+Compared to the analysis with the overall trip distance, where a considerable proportion of individuals (about 10%) still preferred to walk at distances around 2100 meters, the "direct_distance" analysis reveals a much stronger aversion to walking longer distances. This indicates that the direct_distance between the starting point and the train station may be a more accurate representation of individuals' perceptions of distance and their consequent transport mode choices.
+
+```{r direct_distance}
+fit <- multinom(transport_mode ~ direct_distance, data = posmo_train_related_filtered)
+
+z <- summary(fit)$coefficients/summary(fit)$standard.errors
+
+# View model summary
+#summary(fit)
+
+
+# Get the tidy version of the model summary
+tidy_model_summary <- tidy(fit)
+
+# Print the tidy model summary
+#print(tidy_model_summary)
+
+
+# Create a nice-looking table
+kable(tidy_model_summary, digits = 5)
+#plot(Effect("direct_distance",fit),style="stacked")
 
 # Specify the distance values for which you want to calculate the predicted probabilities
 distance_values <- seq(0,5000,100)
@@ -692,7 +759,7 @@ plot <- ggplot(result, aes(x = total_time_value)) +
     geom_line(aes(y = Tram, color = "Tram")) +
     scale_color_manual(values = c("Walk" = "black", "Bike" = "blue", "Bus" = "green", "Car" = "red", "Tram" = "orange")) +
     geom_hline(yintercept = c(0.5, 0.25), linetype = "dotted", color = "gray",linewidth = 1.1)+
-    labs(x = "Distance", y = "Probability") +
+    labs(x = "Distance in meter", y = "Probability") +
     theme_minimal()
 
 # Add legends for the transport modes
@@ -704,7 +771,7 @@ plot
 
 #### Time
 
-The same analysis was conducted for the time measure. The resulting probabilities represent the likelihood of choosing a specific transport mode based on the total time values. The multinomial logistic regression model was fitted using the "total_time" variable as the predictor and the transport mode as the outcome variable, with the "Walk" mode as the reference level.
+The same analysis was conducted for the time measure. The resulting probabilities represent the likelihood of choosing a specific transport mode based on the total time values. The multinomial logistic regression model was fitted using the "total_time" variable as the predictor and the transport mode as the outcome variable, with the "Walk" mode as the reference level. The results of this regresssion are much harder to interpret and are less concrete as the ones before. Overall the model fit is still good, but not as sifnificant as for distance and direct distance. 
 
 | total_time_value | Walk   | Bike  | Bus   | Car   | Tram  |
 |------------------|--------|-------|-------|-------|-------|
@@ -718,6 +785,60 @@ The same analysis was conducted for the time measure. The resulting probabilitie
 For example, at a total time value of 10 minutes, the predicted probabilities suggest that individuals are most likely to choose walking with a probability of 45%, followed by using the "Bike" with 9.2%, taking the bus with 18.4%, taking the car with 16.7%, and using the Tram with 11.1%.
 
 As the total time value increases, the predicted probabilities for going by walk decreases strongly. The probability of car decreases as well, but since we selected a dataset with rather short distances, it could be a bias in the dataset. Overall, the table indicates a shift in transport mode preferences as the total time spent on the trip increases.
+
+```{r}
+fit <- multinom(transport_mode ~ total_time, data = posmo_train_related_filtered)
+
+z <- summary(fit)$coefficients/summary(fit)$standard.errors
+
+# View model summary
+#summary(fit)
+
+
+# Get the tidy version of the model summary
+tidy_model_summary <- tidy(fit)
+
+# Print the tidy model summary
+#print(tidy_model_summary)
+
+
+# Create a nice-looking table
+kable(tidy_model_summary, digits = 5)
+#plot(Effect("direct_distance",fit),style="stacked")
+
+# Specify the distance values for which you want to calculate the predicted probabilities
+distance_values <- seq(0,30,1)
+
+# Create a dataframe with the distance values
+new_data <- data.frame(total_time = distance_values)
+
+# Calculate the predicted probabilities for the different transport modes at the specified distance values
+predicted_probs <- predict(fit, newdata = new_data, type = "probs")
+
+# Combine the distance values and predicted probabilities into a single dataframe
+result <- data.frame(total_time_value = distance_values, predicted_probs)
+
+
+
+# Create the plot
+plot <- ggplot(result, aes(x = total_time_value)) +
+    geom_line(aes(y = Walk, color = "Walk"), linetype = "dashed") +
+    geom_line(aes(y = Bike, color = "Bike")) +
+    geom_line(aes(y = Bus, color = "Bus")) +
+    geom_line(aes(y = Car, color = "Car")) +
+    geom_line(aes(y = Tram, color = "Tram")) +
+    scale_color_manual(values = c("Walk" = "black", "Bike" = "blue", "Bus" = "green", "Car" = "red", "Tram" = "orange")) +
+    geom_hline(yintercept = c(0.5, 0.25), linetype = "dotted", color = "gray",linewidth = 1.1)+
+    labs(x = "Time in minutes", y = "Probability") +
+    theme_minimal()
+
+# Add legends for the transport modes
+plot <- plot + labs(color = "Transport Mode")
+
+# Display the plot
+plot
+```
+
 
 ## Discussion
 
