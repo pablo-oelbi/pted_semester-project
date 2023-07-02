@@ -129,10 +129,12 @@ generate_ylabel <- function(measure) {
   }
   
   # Assign a label based on the measure
-  if (measure == "distance" | measure == "direct_distance") {
-    label <- paste0("Distance (in meters)")
+  if (measure == "distance") {
+    label <- paste0("Distance (m)")
   } else if (measure == "total_time") {
-    label <- paste0("Total time (in minutes)")
+    label <- paste0("Time (min)")
+  } else if (measure == "direct_distance") {
+    label <- paste0("Direct distance (m)")
   }
   
   return(label)
@@ -377,11 +379,11 @@ In the end, we have the following data structure:
 
 -   **`next_transport_mode`**: The mode of transportation that was used by the participant directly after the current `transport_mode`. This, along with `last_transport_mode`, provides a context to the sequence of transportation modes used by the participant. (chr)
 
--   **`distance`**: The total distance covered by the participant during a particular trip. This measurement is derived from the collected location data. (num)
+-   **`distance`**: The total distance in meters covered by the participant during a particular trip. This measurement is derived from the collected location data. (num)
 
--   **`total_time`**: The total time taken by the participant to complete a particular trip. This measurement is derived from the collected location data and corresponds to the `distance` covered in the same trip. (num)
+-   **`total_time`**: The total time in minutes taken by the participant to complete a particular trip. This measurement is derived from the collected location data and corresponds to the `distance` covered in the same trip. (num)
 
--   **`direct_distance`**: The shortest possible distance between the starting and ending point of a trip. This measurement is calculated using the 'as the crow flies' method, which ignores any detours or turns taken during the trip. (num)
+-   **`direct_distance`**: The shortest possible distance in meters between the starting and ending point of a trip. This measurement is calculated using the 'as the crow flies' method, which ignores any detours or turns taken during the trip. (num)
 
 A summary of the enhanced data is shown in @tbl-2.
 
@@ -490,7 +492,7 @@ caption = "Summary of Posmo Analysis Data {#tbl-2}", label = "#tbl-2")
 
 ### Selection of Relevant Trips
 
-When looking into the summary of the data, we can clearly see that, there is some work needed on outliers and identifying just relevant trips. As relevant trips, we see the usage of a transport mode to reach a train. So, a relevant trip should not be too long nor be too far. For that, we are using different box plots and other visuals to identify potential thresholds for the data.
+When looking into the summary of the data, one can clearly see that, there is some work needed on outliers and identifying just relevant trips. As relevant trips, we see the usage of a transport mode to reach a train. So, a relevant trip should not be too long nor be too far. For that, we are using different box plots and other visuals to identify potential thresholds for the data.
 
 #### a. Initial State of the Dataset
 
@@ -688,8 +690,10 @@ library(broom)
 posmo_train_related_filtered$transport_mode <- as.factor(posmo_train_related_filtered$transport_mode)
 posmo_train_related_filtered$transport_mode <- relevel(posmo_train_related_filtered$transport_mode, ref = "Walk")
 # Fit multinomial logistic regression model
-fit <- multinom(transport_mode ~ distance, data = posmo_train_related_filtered)
 
+fit <- suppressMessages({
+  fit <- multinom(transport_mode ~ distance, data = posmo_train_related_filtered)
+})
 z <- summary(fit)$coefficients/summary(fit)$standard.errors
 
 # View model summary
@@ -847,15 +851,16 @@ result <- data.frame(total_time_value = distance_values, predicted_probs)
 
 Looking into the results, we can say that at a total time value of 10 minutes, the predicted probabilities suggest that individuals are most likely to choose walking with a probability of 45%, followed by using the "Bike" with 9.2%, taking the bus with 18.4%, taking the car with 16.7%, and using the Tram with 11.1% (@tbl-9).
 
-| total_time_value | Walk   | Bike  | Bus   | Car   | Tram  |
+| Total Time (min) | Walk   | Bike  | Bus   | Car   | Tram  |
 |------------------|--------|-------|-------|-------|-------|
 | 10               | 44.7%  | 9.2%  | 18.4% | 16.7% | 11.1% |
-| 20               | -10.5% | +5.4% | +4.6% | -1.6% | +2.0% |
-| 30               | -9.9%  | +7.1% | +3.8% | -2.4% | +1.4% |
-| 40               | -8.2%  | +8.2% | +2.3% | -3.4% | +0.4% |
-| 50               | -6.1%  | +8.9% | +0.5% | -2.6% | -0.6% |
-| 60               | -4.1%  | +8.7% | -1.1% | -2.2% | -1.3% |
-: Probabilities of choosing different transport modes at different time values {#tbl-9}
+| 20               | 34.2%  | 14.6% | 23.0% | 15.1% | 13.1% |
+| 30               | 24.3%  | 21.7% | 26.8% | 12.7% | 14.5% |
+| 40               | 16.1%  | 29.9% | 29.1% | 9.9%  | 14.8% |
+| 50               | 10.0%  | 38.8% | 29.6% | 7.3%  | 14.3% |
+| 60               | 5.9%   | 47.5% | 28.5% | 5.1%  | 13.0% |
+: Probabilities of choosing different transport modes based on total time values {#tbl-9}
+
 
 As the total time value increases, the predicted probabilities for going by walk decreases strongly (@fig-7). 
 
