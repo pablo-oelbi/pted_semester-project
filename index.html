@@ -215,7 +215,13 @@ div.csl-indent {
 <span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(purrr)</span>
 <span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cowplot)</span>
 <span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rnaturalearth)</span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rnaturalearthdata)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rnaturalearthdata)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstatix)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(nnet)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(effects)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <div class="cell">
@@ -462,64 +468,61 @@ div.csl-indent {
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a summarized dataframe</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>summary_df <span class="ot">&lt;-</span> posmo <span class="sc">%&gt;%</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_users =</span> <span class="fu">n_distinct</span>(user_id),</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_data_points =</span> <span class="fu">n</span>(),</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_datetimes =</span> <span class="fu">n_distinct</span>(datetime),</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_date =</span> <span class="fu">min</span>(datetime, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_date =</span> <span class="fu">max</span>(datetime, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_transport_modes =</span> <span class="fu">n_distinct</span>(transport_mode),</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_longitude =</span> <span class="fu">mean</span>(lon_x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_longitude =</span> <span class="fu">max</span>(lon_x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_longitude =</span> <span class="fu">min</span>(lon_x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_latitude =</span> <span class="fu">mean</span>(lat_y, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_latitude =</span> <span class="fu">max</span>(lat_y, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_latitude =</span> <span class="fu">min</span>(lat_y, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to gt table</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co"># summary_table &lt;- gt(summary_df, caption = "Table 1: Summary of Posmo Data") %&gt;%</span></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#   cols_label(</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_users = "Number of Users",</span></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_data_points = "Total number of datapoints",</span></span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_datetimes = "Number of Datetimes",</span></span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_date = "Minimal recorded datetime",</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_date = "Maximum recorded datetime",</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_transport_modes = "Number of Transport Modes",</span></span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_longitude = "Average Longitude",</span></span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_longitude = "Maximum Longitude",</span></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_longitude = "Minimum Longitude",</span></span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_latitude = "Average Latitude",</span></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_latitude = "Maximum Latitude",</span></span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_latitude = "Minimum Latitude"</span></span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) %&gt;%</span></span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="co">#   fmt_number(</span></span>
-<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a><span class="co">#     columns = vars(avg_longitude, max_longitude, min_longitude, avg_latitude, max_latitude, min_latitude),</span></span>
-<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="co">#     decimals = 2</span></span>
-<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span>
-<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a><span class="co"># # Print the table</span></span>
-<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a><span class="co"># summary_table |&gt; as_raw_html()</span></span>
-<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(summary_df, <span class="at">digits =</span> <span class="dv">1</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="at">num_users =</span> <span class="st">"Number of Users"</span>,</span>
-<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>                                <span class="at">num_data_points =</span> <span class="st">"Total number of datapoints"</span>,</span>
-<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>                                <span class="at">num_datetimes =</span> <span class="st">"Number of Datetimes"</span>,</span>
-<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>                                <span class="at">min_date =</span> <span class="st">"Minimal recorded datetime"</span>,</span>
-<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>                                <span class="at">max_date =</span> <span class="st">"Maximum recorded datetime"</span>,</span>
-<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>                                <span class="at">num_transport_modes =</span> <span class="st">"Number of Transport Modes"</span>,</span>
-<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>                                <span class="at">avg_longitude =</span> <span class="st">"Average Longitude"</span>,</span>
-<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>                                <span class="at">max_longitude =</span> <span class="st">"Maximum Longitude"</span>,</span>
-<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>                                <span class="at">min_longitude =</span> <span class="st">"Minimum Longitude"</span>,</span>
-<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>                                <span class="at">avg_latitude =</span> <span class="st">"Average Latitude"</span>,</span>
-<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>                                <span class="at">max_latitude =</span> <span class="st">"Maximum Latitude"</span>,</span>
-<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>                                <span class="at">min_latitude =</span> <span class="st">"Minimum Latitude"</span>),</span>
-<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a><span class="at">caption =</span> <span class="st">"Summary of Posmo Data {#tbl-1}"</span>, <span class="at">label =</span> <span class="st">"#tbl-1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a summarized dataframe</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>summary_df <span class="ot">&lt;-</span> posmo <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_users =</span> <span class="fu">n_distinct</span>(user_id),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_data_points =</span> <span class="fu">n</span>(),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_datetimes =</span> <span class="fu">n_distinct</span>(datetime),</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_date =</span> <span class="fu">min</span>(datetime, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_date =</span> <span class="fu">max</span>(datetime, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_transport_modes =</span> <span class="fu">n_distinct</span>(transport_mode),</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_longitude =</span> <span class="fu">mean</span>(lon_x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_longitude =</span> <span class="fu">max</span>(lon_x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_longitude =</span> <span class="fu">min</span>(lon_x, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_latitude =</span> <span class="fu">mean</span>(lat_y, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_latitude =</span> <span class="fu">max</span>(lat_y, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_latitude =</span> <span class="fu">min</span>(lat_y, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to gt table</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a><span class="co"># summary_table &lt;- gt(summary_df, caption = "Table 1: Summary of Posmo Data") %&gt;%</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">#   cols_label(</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_users = "Number of Users",</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_data_points = "Total number of datapoints",</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_datetimes = "Number of Datetimes",</span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_date = "Minimal recorded datetime",</span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_date = "Maximum recorded datetime",</span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_transport_modes = "Number of Transport Modes",</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_longitude = "Average Longitude",</span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_longitude = "Maximum Longitude",</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_longitude = "Minimum Longitude",</span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_latitude = "Average Latitude",</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_latitude = "Maximum Latitude",</span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_latitude = "Minimum Latitude"</span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) %&gt;%</span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a><span class="co">#   fmt_number(</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a><span class="co">#     columns = vars(avg_longitude, max_longitude, min_longitude, avg_latitude, max_latitude, min_latitude),</span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a><span class="co">#     decimals = 2</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a><span class="co"># # Print the table</span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a><span class="co"># summary_table |&gt; as_raw_html()</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(summary_df, <span class="at">digits =</span> <span class="dv">1</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="at">num_users =</span> <span class="st">"Number of Users"</span>,</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>                                <span class="at">num_data_points =</span> <span class="st">"Total number of datapoints"</span>,</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>                                <span class="at">num_datetimes =</span> <span class="st">"Number of Datetimes"</span>,</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>                                <span class="at">min_date =</span> <span class="st">"Minimal recorded datetime"</span>,</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>                                <span class="at">max_date =</span> <span class="st">"Maximum recorded datetime"</span>,</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>                                <span class="at">num_transport_modes =</span> <span class="st">"Number of Transport Modes"</span>,</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>                                <span class="at">avg_longitude =</span> <span class="st">"Average Longitude"</span>,</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>                                <span class="at">max_longitude =</span> <span class="st">"Maximum Longitude"</span>,</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>                                <span class="at">min_longitude =</span> <span class="st">"Minimum Longitude"</span>,</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>                                <span class="at">avg_latitude =</span> <span class="st">"Average Latitude"</span>,</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>                                <span class="at">max_latitude =</span> <span class="st">"Maximum Latitude"</span>,</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>                                <span class="at">min_latitude =</span> <span class="st">"Minimum Latitude"</span>),</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a><span class="at">caption =</span> <span class="st">"Summary of Posmo Data {#tbl-1}"</span>, <span class="at">label =</span> <span class="st">"#tbl-1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div id="tbl-1" class="anchored">
@@ -624,74 +627,71 @@ div.csl-indent {
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(gt)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a summarized dataframe</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>summary_df <span class="ot">&lt;-</span> posmo_analysis <span class="sc">%&gt;%</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_trips =</span> <span class="fu">n_distinct</span>(trip_id),</span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_users =</span> <span class="fu">n_distinct</span>(user_id),</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_days =</span> <span class="fu">n_distinct</span>(day),</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_day =</span> <span class="fu">min</span>(day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_day =</span> <span class="fu">max</span>(day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_transport_modes =</span> <span class="fu">n_distinct</span>(transport_mode),</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_distance =</span> <span class="fu">mean</span>(distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_distance =</span> <span class="fu">max</span>(distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_distance =</span> <span class="fu">min</span>(distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_total_time =</span> <span class="fu">mean</span>(total_time, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_total_time =</span> <span class="fu">max</span>(total_time, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_total_time =</span> <span class="fu">min</span>(total_time, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_direct_distance =</span> <span class="fu">mean</span>(direct_distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_direct_distance =</span> <span class="fu">max</span>(direct_distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_direct_distance =</span> <span class="fu">min</span>(direct_distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to gt table</span></span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="co"># summary_table &lt;- gt(summary_df, caption = "Table 2: Summary of Posmo Analysis Data") %&gt;%</span></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="co">#   cols_label(</span></span>
-<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_trips = "Number of Trips",</span></span>
-<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_users = "Number of Users",</span></span>
-<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_days = "Number of Days",</span></span>
-<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_day = "Earliest Recorded Day",</span></span>
-<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_day = "Latest Recorded Day",</span></span>
-<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_transport_modes = "Number of Transport Modes",</span></span>
-<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_distance = "Average Distance (m)",</span></span>
-<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_distance = "Maximum Distance (m)",</span></span>
-<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_distance = "Minimum Distance (m)",</span></span>
-<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_total_time = "Average Total Time (min)",</span></span>
-<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_total_time = "Maximum Total Time (min)",</span></span>
-<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_total_time = "Minimum Total Time (min)",</span></span>
-<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_direct_distance = "Average Direct Distance (m)",</span></span>
-<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_direct_distance = "Maximum Direct Distance (m)",</span></span>
-<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_direct_distance = "Minimum Direct Distance (m)"</span></span>
-<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) %&gt;%</span></span>
-<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="co">#   fmt_number(</span></span>
-<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="co">#     columns = vars(avg_distance, max_distance, min_distance, avg_total_time, max_total_time, min_total_time, avg_direct_distance, max_direct_distance, min_direct_distance),</span></span>
-<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="co">#     decimals = 2</span></span>
-<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span>
-<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
-<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a><span class="co"># # Print the table</span></span>
-<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a><span class="co"># # print(summary_table)</span></span>
-<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a><span class="co"># summary_table |&gt; as_raw_html()</span></span>
-<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(summary_df, <span class="at">digits =</span> <span class="dv">1</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="at">num_trips =</span> <span class="st">"Number of Trips"</span>,</span>
-<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_users =</span> <span class="st">"Number of Users"</span>,</span>
-<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_days =</span> <span class="st">"Number of Days"</span>,</span>
-<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_day =</span> <span class="st">"Earliest Recorded Day"</span>,</span>
-<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_day =</span> <span class="st">"Latest Recorded Day"</span>,</span>
-<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_transport_modes =</span> <span class="st">"Number of Transport Modes"</span>,</span>
-<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_distance =</span> <span class="st">"Average Distance (m)"</span>,</span>
-<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_distance =</span> <span class="st">"Maximum Distance (m)"</span>,</span>
-<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_distance =</span> <span class="st">"Minimum Distance (m)"</span>,</span>
-<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_total_time =</span> <span class="st">"Average Total Time (min)"</span>,</span>
-<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_total_time =</span> <span class="st">"Maximum Total Time (min)"</span>,</span>
-<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_total_time =</span> <span class="st">"Minimum Total Time (min)"</span>,</span>
-<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_direct_distance =</span> <span class="st">"Average Direct Distance (m)"</span>,</span>
-<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_direct_distance =</span> <span class="st">"Maximum Direct Distance (m)"</span>,</span>
-<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_direct_distance =</span> <span class="st">"Minimum Direct Distance (m)"</span>),</span>
-<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a><span class="at">caption =</span> <span class="st">"Summary of Posmo Analysis Data {#tbl-2}"</span>, <span class="at">label =</span> <span class="st">"#tbl-2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a summarized dataframe</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>summary_df <span class="ot">&lt;-</span> posmo_analysis <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_trips =</span> <span class="fu">n_distinct</span>(trip_id),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_users =</span> <span class="fu">n_distinct</span>(user_id),</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_days =</span> <span class="fu">n_distinct</span>(day),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_day =</span> <span class="fu">min</span>(day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_day =</span> <span class="fu">max</span>(day, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_transport_modes =</span> <span class="fu">n_distinct</span>(transport_mode),</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_distance =</span> <span class="fu">mean</span>(distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_distance =</span> <span class="fu">max</span>(distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_distance =</span> <span class="fu">min</span>(distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_total_time =</span> <span class="fu">mean</span>(total_time, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_total_time =</span> <span class="fu">max</span>(total_time, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_total_time =</span> <span class="fu">min</span>(total_time, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_direct_distance =</span> <span class="fu">mean</span>(direct_distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_direct_distance =</span> <span class="fu">max</span>(direct_distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_direct_distance =</span> <span class="fu">min</span>(direct_distance, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to gt table</span></span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="co"># summary_table &lt;- gt(summary_df, caption = "Table 2: Summary of Posmo Analysis Data") %&gt;%</span></span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="co">#   cols_label(</span></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_trips = "Number of Trips",</span></span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_users = "Number of Users",</span></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_days = "Number of Days",</span></span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_day = "Earliest Recorded Day",</span></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_day = "Latest Recorded Day",</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a><span class="co">#     num_transport_modes = "Number of Transport Modes",</span></span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_distance = "Average Distance (m)",</span></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_distance = "Maximum Distance (m)",</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_distance = "Minimum Distance (m)",</span></span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_total_time = "Average Total Time (min)",</span></span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_total_time = "Maximum Total Time (min)",</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_total_time = "Minimum Total Time (min)",</span></span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a><span class="co">#     avg_direct_distance = "Average Direct Distance (m)",</span></span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a><span class="co">#     max_direct_distance = "Maximum Direct Distance (m)",</span></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a><span class="co">#     min_direct_distance = "Minimum Direct Distance (m)"</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a><span class="co">#   ) %&gt;%</span></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a><span class="co">#   fmt_number(</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a><span class="co">#     columns = vars(avg_distance, max_distance, min_distance, avg_total_time, max_total_time, min_total_time, avg_direct_distance, max_direct_distance, min_direct_distance),</span></span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="co">#     decimals = 2</span></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a><span class="co">#   )</span></span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="co"># # Print the table</span></span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a><span class="co"># # print(summary_table)</span></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a><span class="co"># summary_table |&gt; as_raw_html()</span></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(summary_df, <span class="at">digits =</span> <span class="dv">1</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="at">num_trips =</span> <span class="st">"Number of Trips"</span>,</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_users =</span> <span class="st">"Number of Users"</span>,</span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_days =</span> <span class="st">"Number of Days"</span>,</span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_day =</span> <span class="st">"Earliest Recorded Day"</span>,</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_day =</span> <span class="st">"Latest Recorded Day"</span>,</span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_transport_modes =</span> <span class="st">"Number of Transport Modes"</span>,</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_distance =</span> <span class="st">"Average Distance (m)"</span>,</span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_distance =</span> <span class="st">"Maximum Distance (m)"</span>,</span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_distance =</span> <span class="st">"Minimum Distance (m)"</span>,</span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_total_time =</span> <span class="st">"Average Total Time (min)"</span>,</span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_total_time =</span> <span class="st">"Maximum Total Time (min)"</span>,</span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_total_time =</span> <span class="st">"Minimum Total Time (min)"</span>,</span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_direct_distance =</span> <span class="st">"Average Direct Distance (m)"</span>,</span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_direct_distance =</span> <span class="st">"Maximum Direct Distance (m)"</span>,</span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_direct_distance =</span> <span class="st">"Minimum Direct Distance (m)"</span>),</span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a><span class="at">caption =</span> <span class="st">"Summary of Posmo Analysis Data {#tbl-2}"</span>, <span class="at">label =</span> <span class="st">"#tbl-2"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 <div id="tbl-2" class="anchored">
@@ -1023,17 +1023,14 @@ div.csl-indent {
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Welch's ANOVA for direct_distance</span></span>
 <span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="fu">oneway.test</span>(direct_distance <span class="sc">~</span> transport_mode, <span class="at">data =</span> posmo_train_related_filtered, <span class="at">var.equal =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Import the rstatix package</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rstatix)</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Games-Howell post-hoc test for distance</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a><span class="fu">games_howell_test</span>(posmo_train_related_filtered, distance <span class="sc">~</span> transport_mode)</span>
 <span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Games-Howell post-hoc test for distance</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="fu">games_howell_test</span>(posmo_train_related_filtered, distance <span class="sc">~</span> transport_mode)</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Games-Howell post-hoc test for total_time</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="fu">games_howell_test</span>(posmo_train_related_filtered, total_time <span class="sc">~</span> transport_mode)</span>
 <span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Games-Howell post-hoc test for total_time</span></span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="fu">games_howell_test</span>(posmo_train_related_filtered, total_time <span class="sc">~</span> transport_mode)</span>
-<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Games-Howell post-hoc test for direct_distance</span></span>
-<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a><span class="fu">games_howell_test</span>(posmo_train_related_filtered, direct_distance <span class="sc">~</span> transport_mode)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform Games-Howell post-hoc test for direct_distance</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a><span class="fu">games_howell_test</span>(posmo_train_related_filtered, direct_distance <span class="sc">~</span> transport_mode)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <p>These results indicate that for the measure distance, Bike, Bus, Car, and Tram all had significantly higher average distance than Walk. The negative estimate values represent the average difference in distance compared to Walk, with all modes of transport having more distance on average. This pattern is similarly observed when assessing the direct distance. However, when it comes to time, the data aligns with the chart’s depiction, demonstrating that the mean times across the different modes of transport do not show significant differences.</p>

@@ -47,7 +47,12 @@ library(purrr)
 library(cowplot)
 library(rnaturalearth)
 library(rnaturalearthdata)
-
+library(gt)
+library(knitr)
+library(rstatix)
+library(nnet)
+library(effects)
+library(broom)
 ```
 
 ```{r, echo=TRUE, warning=FALSE}
@@ -299,11 +304,6 @@ posmo <- posmo|>filter(transport_mode != "")
 ```
 
 ```{r summary_table, warning=FALSE, echo=TRUE, message = FALSE}
-
-
-library(gt)
-library(knitr)
-
 # Create a summarized dataframe
 summary_df <- posmo %>%
   summarise(
@@ -418,9 +418,6 @@ posmo_train_related <- posmo_analysis |>
 ```
 
 ```{r}
-library(gt)
-library(dplyr)
-
 # Create a summarized dataframe
 summary_df <- posmo_analysis %>%
   summarise(
@@ -648,9 +645,6 @@ oneway.test(total_time ~ transport_mode, data = posmo_train_related_filtered, va
 # Perform Welch's ANOVA for direct_distance
 oneway.test(direct_distance ~ transport_mode, data = posmo_train_related_filtered, var.equal = FALSE)
 
-# Import the rstatix package
-library(rstatix)
-
 # Perform Games-Howell post-hoc test for distance
 games_howell_test(posmo_train_related_filtered, distance ~ transport_mode)
 
@@ -680,11 +674,6 @@ Similar patterns were observed for Bus, Car, and Tram. The probabilities of choo
 These findings shed light on the relationship between distance and transport mode preferences. They highlight the decreased likelihood of selecting Walk as distances increase, while also emphasizing the varied preferences for Bike, Bus, Car, and Tram based on distance. Importantly, these probabilities are specific to the examined dataset and should be interpreted within the context of the broader study.
 
 ```{r regression, echo=FALSE, warning=FALSE, message=FALSE}
-library(nnet)
-library(effects)
-library(knitr)
-library(broom)
-
 posmo_train_related_filtered$transport_mode <- as.factor(posmo_train_related_filtered$transport_mode)
 posmo_train_related_filtered$transport_mode <- relevel(posmo_train_related_filtered$transport_mode, ref = "Walk")
 # Fit multinomial logistic regression model
