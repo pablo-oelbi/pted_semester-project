@@ -122,6 +122,22 @@ visualize_trajectory <- function(user_id, trip_id, data) {
   return(map)
 }
 
+generate_ylabel <- function(measure) {
+  # Check if measure is one of the expected inputs
+  if (!(measure %in% c("distance", "total_time", "direct_distance"))) {
+    return(measure)
+  }
+  
+  # Assign a label based on the measure
+  if (measure == "distance" | measure == "direct_distance") {
+    label <- paste0("Distance (in meters)")
+  } else if (measure == "total_time") {
+    label <- paste0("Total time (in minutes)")
+  }
+  
+  return(label)
+}
+
 # Function to create a boxplot
 create_boxplot <- function(data, value_column, remove_outliers = FALSE, add_title = FALSE, x_label_visible = TRUE, fixed_order = FALSE) {
   if (remove_outliers) {
@@ -144,13 +160,17 @@ create_boxplot <- function(data, value_column, remove_outliers = FALSE, add_titl
   }else{
     data$transport_mode <- with(data, reorder(transport_mode, get(value_column), FUN = mean)) # Order by mean  
   }
+
+
+  
+  
   
   p<-ggplot(data, aes(x = transport_mode, y = !!sym(value_column), fill = transport_mode)) +
     geom_boxplot(outlier.shape = NA) +  # Don't plot outliers
     geom_jitter(width = 0.3, size = 1, alpha = 0.5) +
     stat_summary(fun = mean, geom = "point", shape = 20, size = 3, color = "black", fill = "white") +
     scale_fill_brewer(palette = "Set3") +
-    labs(y = value_column) +
+    labs(y = generate_ylabel(value_column)) +
     theme_minimal() +
     theme(
       plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
@@ -451,7 +471,7 @@ summary_table |> as_raw_html()
 
 When looking into the summary of the data, we can clearly see that, there is some work needed on outliers and identifying just relevant trips. As relevant trips, we see the usage of a transport mode to reach a train. So, a relevant trip should not be too long nor be too far. For that, we are using different box plots and other visuals to identify potential thresholds for the data.
 
-#### a. Initial state
+#### a. Initial state of the dataset
 
 In examining the box plots, it's evident that the outliers significantly influence the overall visual representation, making it challenging to discern underlying patterns. Furthermore, it's noteworthy that each transportation mode exhibits distinct outlier patterns across different measures. This visualization reinforces the necessity of further scrutinizing and refining our data, as outlined in the subsequent sections of this research project.
 
@@ -459,21 +479,21 @@ In examining the box plots, it's evident that the outliers significantly influen
 combined_boxplot(data = posmo_train_related, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = FALSE)
 ```
 
-#### b. Performed analysis
+#### b. Performed analysis and transformations on the dataset
 
-The purpose of this analysis is to identify and isolate relevant trajectories for different modes of transport---specifically, walk, car, bike, bus, and tram. The relevance of a trip is determined based on a set of pre-defined criteria that include speed and total time of the trip.
+In this analysis, we identify and isolate relevant trajectories for all modes of transportation to a train station. These modes include walking, driving, bicycling, taking a bus, and taking a tram. In order to determine the relevance of a trip, a set of predefined criteria is used, including the speed and total length of the trip.
 
-For each mode of transport, the dataset is first filtered to include only the relevant mode. This subset of data is then further filtered based on the specific criteria for that mode of transport.
+For each transport mode, the dataset is first filtered to include only the relevant transport mode. In order to further refine the subset of data, it is filtered based on the specific criteria for each mode of transportation.
 
-For instance, in the case of walking, trips are considered relevant if the calculated speed is between 2 and 160 (units not specified) and the total time of the trip is less than 60 minutes. Similar criteria are defined for other modes of transport, but with different values to account for the unique characteristics of each mode. For example, car trips are considered relevant if they are less than 30 minutes and the distance is less than 10,000 (units not specified).
+Walking trips, for example, are considered relevant if the calculated speed is between 2 and 160 meters per minute. In addition, the total trip time is less than 60 minutes. Similar criteria are defined for other modes of transport, but with different values to account for each mode's unique characteristics. For example, car trips are considered relevant if they are less than 30 minutes and the distance is less than 10,000 meters.
 
-After the relevant trips for each mode of transport are identified, they are combined back into a single dataset for further analysis. This structured and modular approach ensures that the unique characteristics of each mode of transport are taken into account, leading to more accurate and meaningful results.
+After identifying the relevant trips for each mode of transportation, they are combined back into a single dataset for further analysis. This structured and modular approach ensures that the unique characteristics of each mode of transport are taken into account, leading to more accurate and meaningful results.
 
-The analysis for each mode of transport includes the generation of plots and box-plots to visualize the total time, trip speed, and distance, allowing for the identification and inspection of potential outliers. This approach not only helps in refining the criteria for determining relevant trips, but also aids in understanding the data and identifying patterns or anomalies.
+The analysis of each mode of transport includes the generation of plots and box-plots to visualize the total time, trip speed, and distance, allowing for the identification and inspection of potential outliers. This approach not only helps in refining the criteria for determining relevant trips, but also aids in understanding the data and identifying patterns or anomalies.
 
-In summary, this multi-stage approach is designed to identify the most relevant trips for each mode of transport. The filtering of the data based on intuitive and mode-specific criteria, coupled with visualization techniques, ensures a comprehensive and accurate analysis.
+In summary, this multi-stage approach is designed to identify the most relevant trips for each mode of transport. Filtering the data based on intuitive and mode-specific criteria, coupled with visualization techniques, ensures a comprehensive and accurate analysis.
 
-#### c. Final state
+#### c. Final state of the dataset
 
 ```{r filter_data_for_relevant_trips}
 #add average speed
@@ -505,10 +525,13 @@ posmo_train_related_filtered <- bind_rows(df_walk, df_car, df_bike, df_bus, df_t
 
 ```
 
-After all transformation, we receive a very promising data set:
+After all transformation, our dataset includes the most relevant trajectories for each transport mode to the train station: walking, driving, cycling, bus, and tram. Early indications from our box-plot visualizations suggest that there may be differences in mean values between transport modes. This makes us confident that our dataset can help to answer our research questions. 
 
 ```{r}
-combined_boxplot(data = posmo_train_related_filtered, value_columns = c("distance", "direct_distance", "total_time"), remove_outliers = FALSE)
+create_boxplot(data = posmo_train_related_filtered, value_column =  "distance", remove_outliers = FALSE, add_title = TRUE, fixed_order = TRUE)
+create_boxplot(data = posmo_train_related_filtered, value_column =  "direct_distance", remove_outliers = FALSE, add_title = TRUE, fixed_order = TRUE)
+create_boxplot(data = posmo_train_related_filtered, value_column =  "total_time", remove_outliers = FALSE, add_title = TRUE, fixed_order = TRUE)
+
 ```
 
 ### Statistical Methods and Limitations
@@ -525,7 +548,7 @@ It's important to note the small sample size limited generalizability, and biase
 
 ## Results
 
-### Statistical test to see if the mean values are different
+### Statistical Analysis to Examine Mean Value Differences
 
 #### Shapiro-Wilk and Levene's test
 The results of the Shapiro-Wilk test showed significant deviation from normality (p \< 0.05) for all combinations of measures and transport modes. This suggests that the data for these groups do not follow a normal distribution.
@@ -561,7 +584,17 @@ for (measure in measures) {
 } # Loop over all measures
 ```
 
-Given the violations of normality and homogeneity of variances for some of the measures, we performed Welch's ANOVA, which does not require these assumptions, followed by the Games-Howell post-hoc test for pairwise comparisons.
+Given the violations of normality and homogeneity of variances for some of the measures, we performed Welch's ANOVA tests, which does not require these assumptions, followed by the Games-Howell post-hoc test for pairwise comparisons.
+
+The results for Welch's ANOVA tests are as follows:  
+
+| Measure          | F statistic | num df | denom df | p-value   |
+|------------------|-------------|--------|----------|-----------|
+| Distance         | 40.118      | 4.000  | 55.619   | 8.796e-16 |
+| Total Time       | 2.7365      | 4.000  | 69.250   | 0.03557   |
+| Direct Distance  | 51.228      | 4.000  | 54.141   | <2.2e-16  |
+
+The p-values for all three measures (distance, total time and direct distance) are below the threshold of 0.05. Given these results, we reject the null hypothesis of equal means across all transport modes for these measures. To further investigate the specific pairs of transport modes that have significantly different means, we proceeded with the Games-Howell post-hoc test. 
 
 The results of the Games-Howell post-hoc test showed significant differences in some pairwise comparisons. Below are the statistically significant results:
 
