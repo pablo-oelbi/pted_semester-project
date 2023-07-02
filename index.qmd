@@ -646,7 +646,7 @@ Similar patterns were observed for Bus, Car, and Tram. The probabilities of choo
 
 These findings shed light on the relationship between distance and transport mode preferences. They highlight the decreased likelihood of selecting Walk as distances increase, while also emphasizing the varied preferences for Bike, Bus, Car, and Tram based on distance. Importantly, these probabilities are specific to the examined dataset and should be interpreted within the context of the broader study.
 
-```{r regression, echo=FALSE}
+```{r regression, echo=FALSE, warning=FALSE, message=FALSE}
 library(nnet)
 library(effects)
 library(knitr)
@@ -716,7 +716,7 @@ As the direct_distance to the train station increased, the probability of select
 
 Compared to the analysis with the overall trip distance, where a considerable proportion of individuals (about 10%) still preferred to walk at distances around 2100 meters, the "direct_distance" analysis reveals a much stronger aversion to walking longer distances. This indicates that the direct_distance between the starting point and the train station may be a more accurate representation of individuals' perceptions of distance and their consequent transport mode choices.
 
-```{r direct_distance}
+```{r direct_distance, echo=FALSE, warning=FALSE, message=FALSE}
 fit <- multinom(transport_mode ~ direct_distance, data = posmo_train_related_filtered)
 
 z <- summary(fit)$coefficients/summary(fit)$standard.errors
@@ -771,7 +771,10 @@ plot
 
 #### Time
 
-The same analysis was conducted for the time measure. The resulting probabilities represent the likelihood of choosing a specific transport mode based on the total time values. The multinomial logistic regression model was fitted using the "total_time" variable as the predictor and the transport mode as the outcome variable, with the "Walk" mode as the reference level. The results of this regresssion are much harder to interpret and are less concrete as the ones before. Overall the model fit is still good, but not as sifnificant as for distance and direct distance. 
+The same analysis was conducted for the time measure. The resulting probabilities represent the likelihood of choosing a specific transport mode based on the total time values. The multinomial logistic regression model was fitted using the "total_time" variable as the predictor and the transport mode as the outcome variable, with the "Walk" mode as the reference level. The results of this regresssion are much harder to interpret and are less concrete as the ones before. 
+
+In this case, total time is a significant predictor for the Bike and Bus modes (p-values of 0.00201 and 0.02670, respectively), but not for the Car and Tram modes. This suggests that as total time increases, individuals are more likely to choose biking or taking the bus over walking, but total time does not significantly affect the choice between using the car or taking the tram over walking.
+
 
 | total_time_value | Walk   | Bike  | Bus   | Car   | Tram  |
 |------------------|--------|-------|-------|-------|-------|
@@ -782,11 +785,11 @@ The same analysis was conducted for the time measure. The resulting probabilitie
 | 50               | -6.1%  | +8.9% | +0.5% | -2.6% | -0.6% |
 | 60               | -4.1%  | +8.7% | -1.1% | -2.2% | -1.3% |
 
-For example, at a total time value of 10 minutes, the predicted probabilities suggest that individuals are most likely to choose walking with a probability of 45%, followed by using the "Bike" with 9.2%, taking the bus with 18.4%, taking the car with 16.7%, and using the Tram with 11.1%.
+Looking into the results, we can say that at a total time value of 10 minutes, the predicted probabilities suggest that individuals are most likely to choose walking with a probability of 45%, followed by using the "Bike" with 9.2%, taking the bus with 18.4%, taking the car with 16.7%, and using the Tram with 11.1%.
 
-As the total time value increases, the predicted probabilities for going by walk decreases strongly. The probability of car decreases as well, but since we selected a dataset with rather short distances, it could be a bias in the dataset. Overall, the table indicates a shift in transport mode preferences as the total time spent on the trip increases.
+As the total time value increases, the predicted probabilities for going by walk decreases strongly. 
 
-```{r}
+```{r regression_time, echo=FALSE, warning=FALSE, message=FALSE}
 fit <- multinom(transport_mode ~ total_time, data = posmo_train_related_filtered)
 
 z <- summary(fit)$coefficients/summary(fit)$standard.errors
